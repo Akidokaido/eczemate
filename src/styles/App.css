@@ -1,0 +1,28 @@
+/* Basic styling for the container */
+.container {
+  text-align: center;
+  padding: 2rem;
+}
+
+/* Styling the buttons */
+button {
+  padding: 10px 20px;
+  background-color: #0984e3;
+  color: white;
+  border: none;
+  cursor: pointer;
+  margin: 10px;
+}
+
+button:hover {
+  background-color: #74b9ff;
+}
+
+/* Styling the body model */
+.rbh {
+  transition: all 0.3s ease;
+}
+
+.rbh:hover {
+  opacity: 0.8; /* Hover effect */
+}

@@ -1,0 +1,35 @@
+/* Basic styles for the body */
+body {
+  font-family: Arial, sans-serif;
+  background-color: #f4f7fa;
+  text-align: center;
+}
+
+h2 {
+  margin-bottom: 20px;
+}
+
+svg {
+  width: 150px;
+  height: 300px;
+  cursor: pointer;
+  margin: 20px 0;
+}
+
+.body-part {
+  fill: lightgray;
+  transition: fill 0.3s;
+}
+
+.body-part:hover {
+  fill: orange; /* Change color on hover */
+}
+
+.body-part.selected {
+  fill: green; /* Change color on click */
+}
+
+#message {
+  font-size: 20px;
+  margin-top: 20px;
+}
