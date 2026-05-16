@@ -5,9 +5,9 @@ import {
   doc, getDoc, collection, query, where, getDocs, updateDoc
 } from "../../firebase/config";
 import { getUserDocRef } from "../../firebase/userPaths";
-import TrackProgress from "../../features/TrackProgress";
-import Journal from "../../features/Journal";
-import AiChat from "../../features/AiChat";
+import TrackProgress from "../../features/trackprogress";
+import Journal from "../../features/journal";
+import AiChat from "../../features/aichat";
 import BookAppointment from "../../components/BookAppointment";
 import MedicalRecord from "../../features/MedicalRecord";
 import { Activity, BookOpen, MessageSquare, Calendar, Plus, List, XCircle, FileText } from "lucide-react";

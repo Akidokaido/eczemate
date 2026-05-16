@@ -2,21 +2,21 @@ import React, { Suspense, lazy } from "react";
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 
 // Auth
-const Login    = lazy(() => import("./auth/Login.jsx"));
-const Signup   = lazy(() => import("./auth/Signup.jsx"));
+const Login    = lazy(() => import("./auth/login.jsx"));
+const Signup   = lazy(() => import("./auth/signup.jsx"));
 
 // Main Pages
-const Home = lazy(() => import("./pages/Home.jsx"));
+const Home = lazy(() => import("./pages/home.jsx"));
 
 // Dashboards
-const PatientDashboard = lazy(() => import("./pages/dashboard/PatientDashboard.jsx"));
-const DoctorDashboard  = lazy(() => import("./pages/dashboard/DoctorDashboard.jsx"));
+const PatientDashboard = lazy(() => import("./pages/dashboard/patientDashboard.jsx"));
+const DoctorDashboard  = lazy(() => import("./pages/dashboard/doctorDashboard.jsx"));
 const AdminDashboard   = lazy(() => import("./pages/dashboard/AdminDashboard.jsx"));
 
 // Patient Features
-const Journal      = lazy(() => import("./features/Journal.jsx"));
-const AiChat       = lazy(() => import("./features/AiChat.jsx"));
-const TrackProgress = lazy(() => import("./features/TrackProgress.jsx"));
+const Journal      = lazy(() => import("./features/journal.jsx"));
+const AiChat       = lazy(() => import("./features/aichat.jsx"));
+const TrackProgress = lazy(() => import("./features/trackprogress.jsx"));
 
 // Doctor Pages
 const Appointments  = lazy(() => import("./components/doctor/Appointments.jsx"));
