@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { auth, createUserWithEmailAndPassword, firestore } from "../firebase/config";
+import { signOut } from "firebase/auth";
 import { doc, setDoc } from "firebase/firestore";
 import { getUserDocRef } from "../firebase/userPaths";
 import { Mail, Lock, UserPlus, ChevronDown, User, CheckCircle } from "lucide-react";
@@ -49,13 +50,12 @@ const Signup = () => {
 
       if (role === "doctor") {
         // Sign out immediately — they can't use the app until approved
-        const { signOut } = await import("firebase/auth");
         await signOut(auth);
         setPendingMessage(true);
       } else if (role === "patient") {
-        navigate("/patientDashboard");
+        navigate("/patient/dashboard");
       } else {
-        navigate("/adminDashboard");
+        navigate("/admin/dashboard");
       }
     } catch (err) {
       if (err.code === "auth/email-already-in-use") setError("This email is already registered.");

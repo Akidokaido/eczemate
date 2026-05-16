@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
-import DoctorLayout from "./DoctorLayout";
-import { auth, firestore, onAuthStateChanged, doc, getDoc, updateDoc, setDoc } from "../firebase/config";
-import { getUserDocRef } from "../firebase/userPaths";
+import DoctorLayout from "../DoctorLayout";
+import { auth, firestore, onAuthStateChanged, doc, getDoc, updateDoc, setDoc } from "../../firebase/config";
+import { getUserDocRef } from "../../firebase/userPaths";
 import { Save, CheckCircle } from "lucide-react";
 
 const Settings = () => {

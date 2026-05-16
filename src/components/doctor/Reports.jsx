@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
-import DoctorLayout from "./DoctorLayout";
-import { auth, firestore, onAuthStateChanged, collection, query, where, getDocs } from "../firebase/config";
-import { getUserCollectionRef } from "../firebase/userPaths";
+import DoctorLayout from "../DoctorLayout";
+import { auth, firestore, onAuthStateChanged, collection, query, where, getDocs } from "../../firebase/config";
+import { getUserCollectionRef } from "../../firebase/userPaths";
 
 const Reports = () => {
   const [stats, setStats] = useState({ totalPatients: 0, totalAppointments: 0, pendingAppts: 0, approvedAppts: 0, rejectedAppts: 0, totalSymptomLogs: 0 });

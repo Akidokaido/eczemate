@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
-import DoctorLayout from "../components/DoctorLayout";
-import { auth, firestore, onAuthStateChanged, collection, query, where, getDocs, doc, updateDoc } from "../firebase/config";
-import { Search, ChevronDown } from "lucide-react";
+import DoctorLayout from "../DoctorLayout";
+import { auth, firestore, onAuthStateChanged, collection, query, where, getDocs, doc, updateDoc } from "../../firebase/config";
+import { Search, ChevronDown, CheckCircle } from "lucide-react";
 
 const Appointments = () => {
   const [appointments, setAppointments] = useState([]);
@@ -33,8 +33,29 @@ const Appointments = () => {
   useEffect(() => { const unsub = onAuthStateChanged(auth, (u) => { if (u) fetchAppointments(u.uid); }); return () => unsub(); }, []);
 
   const handleStatusChange = async (appt, status) => {
+    if (status === "completed") {
+      // Check if medical record exists for this patient today
+      try {
+        const today = new Date().toISOString().split('T')[0];
+        const recSnap = await getDocs(collection(firestore, "users", "patients", "accounts", appt.patientDocId, "officialRecords"));
+        const recordToday = recSnap.docs.some(doc => {
+          const data = doc.data();
+          const recordDate = data.createdAt?.toDate ? data.createdAt.toDate().toISOString().split('T')[0] : "";
+          return recordDate === today;
+        });
+
+        if (!recordToday) {
+          alert("Incomplete: Please fill out the medical record in the Patient's File before marking this appointment as completed.");
+          return;
+        }
+      } catch (err) {
+        console.error("Error checking records:", err);
+      }
+    }
+
     await updateDoc(doc(firestore, "users", "patients", "accounts", appt.patientDocId, "appointments", appt.id), { status });
     setAppointments((prev) => prev.map((a) => a.id === appt.id ? { ...a, status } : a));
+    if (status === "completed") alert("Appointment marked as completed!");
   };
 
   const filteredAppointments = appointments.filter(appt => {
@@ -102,9 +123,22 @@ const Appointments = () => {
                 </div>
                 {appt.status === "pending" && (
                   <div className="flex gap-2">
-                    <button onClick={() => handleStatusChange(appt, "approved")} className="btn-success">Approve</button>
-                    <button onClick={() => handleStatusChange(appt, "rejected")} className="btn-danger">Reject</button>
+                    <button onClick={() => handleStatusChange(appt, "approved")} className="bg-emerald-50 text-emerald-600 px-3 py-1.5 rounded-lg text-xs font-bold hover:bg-emerald-100 transition">Approve</button>
+                    <button onClick={() => handleStatusChange(appt, "rejected")} className="bg-rose-50 text-rose-600 px-3 py-1.5 rounded-lg text-xs font-bold hover:bg-rose-100 transition">Reject</button>
                   </div>
+                )}
+                {appt.status === "approved" && (
+                  <button 
+                    onClick={() => handleStatusChange(appt, "completed")} 
+                    className="flex items-center gap-2 bg-[#0D9488]/10 text-[#0D9488] px-4 py-2 rounded-xl text-xs font-bold hover:bg-[#0D9488]/20 transition"
+                  >
+                    <CheckCircle size={14} /> Mark as Completed
+                  </button>
+                )}
+                {appt.status === "completed" && (
+                  <span className="flex items-center gap-1.5 text-emerald-600 font-bold text-xs">
+                    <CheckCircle size={14} /> Completed
+                  </span>
                 )}
               </div>
             ))}

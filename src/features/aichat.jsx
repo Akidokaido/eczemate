@@ -1,31 +1,25 @@
 import React, { useState, useEffect, useRef } from "react";
-import { Heart, Shield, Droplets, ArrowUp } from "lucide-react"; // Import ArrowUp icon
+import { Heart, Shield, Droplets, ArrowUp } from "lucide-react";
 
-const aichat = () => {
+const AiChat = () => {
   const [message, setMessage] = useState("");
   const [chatHistory, setChatHistory] = useState([]);
   const [loading, setLoading] = useState(false);
-  const [isTyping, setIsTyping] = useState(false); // For simulating typing
-  const chatEndRef = useRef(null); // To scroll to the bottom when new messages are added
+  const [isTyping, setIsTyping] = useState(false);
+  const chatEndRef = useRef(null);
 
-  // Scroll to the bottom whenever a new message is added
   useEffect(() => {
     chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [chatHistory]);
 
   const handleSendMessage = async (e) => {
     e.preventDefault();
-    if (!message.trim()) return; // Don't send empty messages
+    if (!message.trim()) return;
 
-    // Add user message to chat history
     setChatHistory([...chatHistory, { sender: "user", message }]);
     setLoading(true);
     setMessage("");
-
-    // Simulate AI response (replace with real API call later)
     setIsTyping(true);
-
-    // Call your API (chat.js) to get the AI's response
     try {
       const response = await fetch("/api/chat", {
         method: "POST",
@@ -55,14 +49,20 @@ const aichat = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-b from-blue-50 to-white px-4 py-16">
-      <div className="relative w-full max-w-3xl bg-white rounded-3xl shadow-xl p-8 space-y-6">
-        {/* Decorative floating cards */}
-        <div className="absolute -top-6 -left-6 w-20 h-20 bg-blue-100 rounded-xl shadow-lg rotate-12"></div>
-        <div className="absolute -bottom-6 -right-6 w-20 h-20 bg-blue-200 rounded-xl shadow-lg -rotate-12"></div>
+    <div className="min-h-screen flex items-center justify-center bg-[#FDFBF7] px-4 py-16 relative overflow-hidden">
+      {/* Background mesh */}
+      <div className="absolute top-0 left-0 w-full h-full pointer-events-none opacity-40">
+        <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-[#0D9488]/[0.04] rounded-full blur-[120px]" />
+        <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-[#F97316]/[0.03] rounded-full blur-[120px]" />
+      </div>
 
-        <h2 className="text-3xl font-extrabold text-blue-600 text-center">
-          AI Chatbot - EczeMate+
+      <div className="relative w-full max-w-3xl bg-white rounded-3xl shadow-[0_4px_20px_rgb(0,0,0,0.02)] border border-slate-100 p-8 space-y-6 z-10">
+        {/* Decorative floating cards */}
+        <div className="absolute -top-6 -left-6 w-20 h-20 bg-[#0D9488]/10 rounded-2xl shadow-lg shadow-[#0D9488]/5 border border-[#0D9488]/20 rotate-12"></div>
+        <div className="absolute -bottom-6 -right-6 w-20 h-20 bg-[#F97316]/10 rounded-2xl shadow-lg shadow-[#F97316]/5 border border-[#F97316]/20 -rotate-12"></div>
+
+        <h2 className="text-3xl font-extrabold text-[#1C1917] tracking-tight text-center">
+          AI Chatbot <span className="text-[#0D9488]">EczeMate+</span>
         </h2>
 
         {/* Chat History */}
@@ -73,8 +73,8 @@ const aichat = () => {
               className={`flex ${chat.sender === "user" ? "justify-end" : "justify-start"}`}
             >
               <div
-                className={`p-4 max-w-xs rounded-xl shadow-md ${
-                  chat.sender === "user" ? "bg-teal-500 text-white" : "bg-gray-100 text-gray-700"
+                className={`p-4 max-w-xs rounded-2xl shadow-sm text-sm font-medium ${
+                  chat.sender === "user" ? "bg-[#0D9488] text-white rounded-br-sm" : "bg-[#FDFBF7] border border-slate-100 text-[#1C1917] rounded-bl-sm"
                 }`}
               >
                 {chat.message}
@@ -83,43 +83,48 @@ const aichat = () => {
           ))}
           {isTyping && (
             <div className="flex justify-start space-x-2">
-              <div className="p-4 max-w-xs rounded-xl bg-gray-100 text-gray-700 shadow-md">
-                <span className="italic text-gray-500">AI is typing...</span>
+              <div className="p-4 max-w-xs rounded-2xl rounded-bl-sm bg-[#FDFBF7] border border-slate-100 text-[#1C1917] shadow-sm flex items-center gap-2">
+                <div className="flex gap-1">
+                  <div className="w-1.5 h-1.5 bg-[#0D9488] rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
+                  <div className="w-1.5 h-1.5 bg-[#0D9488] rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
+                  <div className="w-1.5 h-1.5 bg-[#0D9488] rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
+                </div>
               </div>
             </div>
           )}
         </div>
 
         {/* Chat Input */}
-        <form className="flex space-x-4" onSubmit={handleSendMessage}>
+        <form className="flex space-x-4 relative" onSubmit={handleSendMessage}>
           <input
             type="text"
             placeholder="Ask me anything about eczema..."
             value={message}
             onChange={(e) => setMessage(e.target.value)}
-            className="w-full px-4 py-3 rounded-xl border border-gray-200 bg-blue-50 focus:outline-none focus:ring-2 focus:ring-blue-400 placeholder-gray-400"
+            className="w-full px-5 py-4 rounded-2xl border-2 border-transparent bg-[#FDFBF7] focus:outline-none focus:bg-white focus:border-[#0D9488]/20 focus:ring-4 focus:ring-[#0D9488]/[0.06] text-[#1C1917] placeholder-[#94a3b8] transition-all duration-300"
           />
           <button
             type="submit"
-            className="w-auto bg-teal-500 hover:bg-teal-600 text-white font-semibold py-3 px-6 rounded-xl shadow-md transition-transform transform hover:-translate-y-1"
+            disabled={loading || !message.trim()}
+            className="absolute right-2 top-2 bottom-2 aspect-square flex items-center justify-center bg-[#0D9488] hover:bg-[#0f766e] disabled:opacity-50 text-white rounded-xl shadow-md shadow-[#0D9488]/20 transition-all duration-300"
           >
-            <ArrowUp className="w-6 h-6" /> {/* ArrowUp icon */}
+            <ArrowUp className="w-5 h-5" /> 
           </button>
         </form>
 
         {/* Trust Indicators */}
-        <div className="mt-6 flex justify-around items-center text-sm text-gray-500">
+        <div className="mt-8 flex justify-around items-center text-xs font-bold text-[#64748B] uppercase tracking-widest pt-6 border-t border-slate-50">
           <div className="flex items-center gap-2">
-            <Shield className="h-5 w-5 text-teal-600" />
-            <span>Secure Communication</span>
+            <Shield className="h-4 w-4 text-[#0D9488]" />
+            <span>Secure Chat</span>
           </div>
           <div className="flex items-center gap-2">
-            <Heart className="h-5 w-5 text-teal-600" />
-            <span>Gentle on Skin</span>
+            <Heart className="h-4 w-4 text-[#F97316]" />
+            <span>Empathy</span>
           </div>
           <div className="flex items-center gap-2">
-            <Droplets className="h-5 w-5 text-teal-600" />
-            <span>Deep Hydration</span>
+            <Droplets className="h-4 w-4 text-[#0D9488]" />
+            <span>Skincare</span>
           </div>
         </div>
       </div>
@@ -128,4 +133,4 @@ const aichat = () => {
   );
 };
 
-export default aichat;
+export default AiChat;

@@ -1,9 +1,9 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { auth } from "../firebase/config";
+import { auth } from "../../firebase/config";
 import { signOut } from "firebase/auth";
 import { getDocs, deleteDoc } from "firebase/firestore";
-import { getUserCollectionRef, getUserDocRef } from "../firebase/userPaths";
+import { getUserCollectionRef, getUserDocRef } from "../../firebase/userPaths";
 import { User, Trash2, ArrowLeft, LogOut } from "lucide-react";
 
 const ManagePatients = () => {
@@ -28,9 +28,9 @@ const ManagePatients = () => {
   return (
     <div className="min-h-screen" style={{ background: "var(--bg-primary)" }}>
       <div className="bg-mesh" />
-      <div className="relative z-10 max-w-4xl mx-auto p-8 animate-fade-in-up">
+      <div className="relative z-10 max-w-7xl mx-auto p-8 animate-fade-in-up">
         <div className="flex items-center justify-between mb-6">
-          <button onClick={() => navigate("/adminDashboard")} className="btn-ghost text-sm py-2 px-4 flex items-center gap-2">
+          <button onClick={() => navigate("/admin/dashboard")} className="btn-ghost text-sm py-2 px-4 flex items-center gap-2">
             <ArrowLeft className="h-4 w-4" /> Back to Dashboard
           </button>
           <button onClick={async () => { await signOut(auth); navigate("/login"); }} className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium text-red-500 hover:bg-red-50 transition">

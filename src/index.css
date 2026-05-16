@@ -3,27 +3,27 @@
 /* ─── Design System: Premium Light Theme ─── */
 
 :root {
-  --bg-primary: #f8fafc;
+  --bg-primary: #FDFBF7;
   --bg-secondary: #ffffff;
-  --bg-surface: rgba(255, 255, 255, 0.8);
-  --bg-surface-hover: rgba(255, 255, 255, 0.95);
-  --border-subtle: rgba(0, 0, 0, 0.08);
-  --border-glow: rgba(14, 165, 233, 0.4);
-  --text-primary: #1e293b;
-  --text-secondary: #475569;
+  --bg-surface: rgba(255, 255, 255, 0.85);
+  --bg-surface-hover: rgba(255, 255, 255, 0.98);
+  --border-subtle: rgba(0, 0, 0, 0.04);
+  --border-glow: rgba(13, 148, 136, 0.3);
+  --text-primary: #1C1917;
+  --text-secondary: #64748B;
   --text-muted: #94a3b8;
-  --gradient-primary: linear-gradient(135deg, #0ea5e9, #38bdf8, #7dd3fc);
-  --gradient-accent: linear-gradient(135deg, #06b6d4, #0ea5e9);
-  --gradient-warm: linear-gradient(135deg, #f59e0b, #ef4444);
-  --glow-primary: 0 4px 20px rgba(14, 165, 233, 0.2), 0 0 40px rgba(14, 165, 233, 0.08);
-  --glow-cyan: 0 4px 20px rgba(6, 182, 212, 0.2);
-  --glow-success: 0 4px 15px rgba(16, 185, 129, 0.2);
-  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.06), 0 1px 2px rgba(0, 0, 0, 0.04);
-  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.07), 0 2px 4px rgba(0, 0, 0, 0.04);
-  --shadow-lg: 0 10px 30px rgba(0, 0, 0, 0.08), 0 4px 8px rgba(0, 0, 0, 0.04);
-  --radius-lg: 16px;
-  --radius-xl: 24px;
-  --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  --gradient-primary: linear-gradient(135deg, #0D9488, #14B8A6);
+  --gradient-accent: linear-gradient(135deg, #F97316, #FB923C);
+  --gradient-warm: linear-gradient(135deg, #F97316, #ef4444);
+  --glow-primary: 0 8px 30px rgba(13, 148, 136, 0.2), 0 0 40px rgba(13, 148, 136, 0.05);
+  --glow-cyan: 0 4px 20px rgba(13, 148, 136, 0.15);
+  --glow-success: 0 4px 15px rgba(16, 185, 129, 0.15);
+  --shadow-sm: 0 4px 20px rgba(0, 0, 0, 0.02);
+  --shadow-md: 0 8px 30px rgba(0, 0, 0, 0.03);
+  --shadow-lg: 0 20px 50px rgba(0, 0, 0, 0.05);
+  --radius-lg: 20px;
+  --radius-xl: 32px;
+  --transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 /* ─── Base Reset ─── */
@@ -109,8 +109,8 @@ body {
 }
 
 .btn-ghost:hover {
-  border-color: rgba(14, 165, 233, 0.3);
-  box-shadow: 0 4px 15px rgba(14, 165, 233, 0.1);
+  border-color: rgba(13, 148, 136, 0.2);
+  box-shadow: 0 4px 15px rgba(13, 148, 136, 0.05);
   transform: translateY(-1px);
 }
 
@@ -170,8 +170,8 @@ body {
 }
 
 .glow-card:hover {
-  border-color: rgba(14, 165, 233, 0.2);
-  box-shadow: var(--shadow-lg), 0 0 0 1px rgba(14, 165, 233, 0.08);
+  border-color: rgba(13, 148, 136, 0.15);
+  box-shadow: var(--shadow-lg), 0 0 0 1px rgba(13, 148, 136, 0.05);
   transform: translateY(-4px);
 }
 
@@ -195,8 +195,8 @@ body {
 .input-dark::placeholder { color: var(--text-muted); }
 
 .input-dark:focus {
-  border-color: #0ea5e9;
-  box-shadow: 0 0 0 3px rgba(14, 165, 233, 0.12), var(--shadow-sm);
+  border-color: #0D9488;
+  box-shadow: 0 0 0 3px rgba(13, 148, 136, 0.1), var(--shadow-sm);
 }
 
 /* ─── Status Badges ─── */
@@ -243,9 +243,9 @@ body {
   bottom: 0;
   z-index: 0;
   background:
-    radial-gradient(ellipse at 20% 50%, rgba(14, 165, 233, 0.06) 0%, transparent 50%),
-    radial-gradient(ellipse at 80% 20%, rgba(56, 189, 248, 0.04) 0%, transparent 50%),
-    radial-gradient(ellipse at 50% 80%, rgba(6, 182, 212, 0.03) 0%, transparent 50%);
+    radial-gradient(ellipse at 20% 50%, rgba(13, 148, 136, 0.05) 0%, transparent 50%),
+    radial-gradient(ellipse at 80% 20%, rgba(249, 115, 22, 0.03) 0%, transparent 50%),
+    radial-gradient(ellipse at 50% 80%, rgba(20, 184, 166, 0.02) 0%, transparent 50%);
   pointer-events: none;
 }
 
@@ -262,7 +262,7 @@ body {
 
 @keyframes glow-pulse {
   0%, 100% { box-shadow: var(--shadow-md); }
-  50% { box-shadow: var(--shadow-lg), 0 0 20px rgba(14, 165, 233, 0.1); }
+  50% { box-shadow: var(--shadow-lg), 0 0 20px rgba(13, 148, 136, 0.08); }
 }
 
 .animate-fade-in-up { animation: fadeInUp 0.6s ease-out forwards; }
@@ -279,11 +279,11 @@ body {
 /* ─── Scrollbar ─── */
 ::-webkit-scrollbar { width: 6px; }
 ::-webkit-scrollbar-track { background: var(--bg-primary); }
-::-webkit-scrollbar-thumb { background: rgba(14, 165, 233, 0.2); border-radius: 3px; }
-::-webkit-scrollbar-thumb:hover { background: rgba(14, 165, 233, 0.4); }
+::-webkit-scrollbar-thumb { background: rgba(13, 148, 136, 0.15); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: rgba(13, 148, 136, 0.3); }
 
 /* ─── Selection ─── */
-::selection { background: rgba(14, 165, 233, 0.15); color: #1e293b; }
+::selection { background: rgba(13, 148, 136, 0.15); color: #1C1917; }
 
 /* ─── Calendar Override ─── */
 .react-calendar {
@@ -302,17 +302,17 @@ body {
 }
 
 .react-calendar__tile:hover {
-  background: rgba(14, 165, 233, 0.08) !important;
-  color: #0284c7 !important;
+  background: rgba(13, 148, 136, 0.08) !important;
+  color: #0D9488 !important;
 }
 
 .react-calendar__tile--active {
-  background: #0ea5e9 !important;
+  background: #0D9488 !important;
   color: white !important;
 }
 
 .react-calendar__tile--now {
-  background: rgba(14, 165, 233, 0.06) !important;
+  background: rgba(249, 115, 22, 0.08) !important;
 }
 
 .react-calendar__navigation button {

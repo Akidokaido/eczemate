@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from "react";
 import { useParams } from "react-router-dom";
-import DoctorLayout from "./DoctorLayout";
-import { firestore, auth, onAuthStateChanged, collection, query, where, getDocs, orderBy, getDoc, addDoc, serverTimestamp, Timestamp } from "../firebase/config";
-import { getUserDocRef } from "../firebase/userPaths";
+import DoctorLayout from "../DoctorLayout";
+import { firestore, auth, onAuthStateChanged, collection, query, where, getDocs, orderBy, getDoc, addDoc, serverTimestamp, Timestamp } from "../../firebase/config";
+import { getUserDocRef } from "../../firebase/userPaths";
 import { Send, FileText, CheckSquare, Printer, Stethoscope, CalendarDays, ClipboardList, CalendarPlus, Clock } from "lucide-react";
 
 const TIME_SLOTS = [
@@ -472,106 +472,113 @@ const PatientHistory = () => {
           </form>
         </div>
 
-        {/* Past Medical Records — Doctor Only */}
-        <div className="glass-strong p-6 space-y-4 print:break-before-page">
-          <div className="flex items-center justify-between">
-            <h3 className="text-lg font-semibold text-slate-800 flex items-center gap-2">
-              <ClipboardList className="h-5 w-5 text-indigo-500" /> Past Medical Records
-            </h3>
-            <div className="flex items-center gap-2 print-hide">
-              {recordDateFilter && (
-                <button onClick={() => setRecordDateFilter("")} className="text-xs font-semibold text-indigo-500 hover:text-indigo-600 transition px-2.5 py-1 rounded-lg bg-indigo-50 border border-indigo-100">
-                  Show All
-                </button>
-              )}
-              <div className="relative">
-                <CalendarDays className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400 pointer-events-none" />
-                <input
-                  type="date"
-                  value={recordDateFilter}
-                  onChange={(e) => setRecordDateFilter(e.target.value)}
-                  className="input-dark text-xs py-1.5 pl-8 pr-2 w-40 cursor-pointer bg-white"
-                  style={{ fontSize: '12px' }}
-                />
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start print:block">
+          {/* Past Medical Records — Doctor Only */}
+          <div className="glass-strong p-6 flex flex-col h-[600px] print:h-auto print:break-before-page">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-semibold text-slate-800 flex items-center gap-2">
+                <ClipboardList className="h-5 w-5 text-indigo-500" /> Past Medical Records
+              </h3>
+              <div className="flex items-center gap-2 print-hide">
+                {recordDateFilter && (
+                  <button onClick={() => setRecordDateFilter("")} className="text-xs font-semibold text-indigo-500 hover:text-indigo-600 transition px-2.5 py-1 rounded-lg bg-indigo-50 border border-indigo-100">
+                    Show All
+                  </button>
+                )}
+                <div className="relative">
+                  <CalendarDays className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400 pointer-events-none" />
+                  <input
+                    type="date"
+                    value={recordDateFilter}
+                    onChange={(e) => setRecordDateFilter(e.target.value)}
+                    className="input-dark text-xs py-1.5 pl-8 pr-2 w-40 cursor-pointer bg-white"
+                    style={{ fontSize: '12px' }}
+                  />
+                </div>
               </div>
+            </div>
+            
+            <div className="overflow-y-auto flex-1 space-y-4 pr-2">
+              {medicalRecords.length === 0 ? (
+                <p className="text-slate-500">No medical records yet.</p>
+              ) : (() => {
+                const filtered = recordDateFilter
+                  ? medicalRecords.filter(r => {
+                      if (!r.createdAt) return false;
+                      const d = r.createdAt.toDate ? r.createdAt.toDate() : new Date(r.createdAt);
+                      return d.toISOString().split('T')[0] === recordDateFilter;
+                    })
+                  : medicalRecords;
+                return filtered.length === 0 ? (
+                  <div className="text-center py-8">
+                    <CalendarDays className="h-8 w-8 text-slate-300 mx-auto mb-2" />
+                    <p className="text-slate-500 text-sm">No records on this date.</p>
+                    <button onClick={() => setRecordDateFilter("")} className="text-indigo-500 text-xs hover:underline mt-1">Show all records</button>
+                  </div>
+                ) : filtered.map((rec) => (
+                  <div key={rec.id} className="bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
+                    <div className="flex justify-between items-center mb-3">
+                      <span className="text-sm font-semibold text-indigo-600 bg-indigo-50 px-3 py-1 rounded-full">
+                        {formatTime(rec.createdAt)}
+                      </span>
+                      <span className="text-xs text-slate-400">Dr. {rec.doctorName}</span>
+                    </div>
+                    <div className="space-y-3">
+                      <div>
+                        <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Patient Summary</p>
+                        <p className="text-sm text-slate-700 whitespace-pre-wrap">{rec.patientSummary}</p>
+                      </div>
+                      {rec.privateNotes && (
+                        <div className="bg-rose-50 p-3 rounded-lg border border-rose-100">
+                          <p className="text-xs font-bold text-rose-700 uppercase mb-1">Private Clinical Notes</p>
+                          <p className="text-sm text-rose-900 whitespace-pre-wrap">{rec.privateNotes}</p>
+                        </div>
+                      )}
+                      {rec.prescriptions && rec.prescriptions.length > 0 && (
+                        <div className="bg-emerald-50 p-3 rounded-lg border border-emerald-100">
+                          <p className="text-xs font-bold text-emerald-700 uppercase mb-1">Prescriptions</p>
+                          <p className="text-sm text-emerald-900">{rec.prescriptions.join(", ")}</p>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                ));
+              })()}
             </div>
           </div>
-          {medicalRecords.length === 0 ? (
-            <p className="text-slate-500">No medical records yet.</p>
-          ) : (() => {
-            const filtered = recordDateFilter
-              ? medicalRecords.filter(r => {
-                  if (!r.createdAt) return false;
-                  const d = r.createdAt.toDate ? r.createdAt.toDate() : new Date(r.createdAt);
-                  return d.toISOString().split('T')[0] === recordDateFilter;
-                })
-              : medicalRecords;
-            return filtered.length === 0 ? (
-              <div className="text-center py-8">
-                <CalendarDays className="h-8 w-8 text-slate-300 mx-auto mb-2" />
-                <p className="text-slate-500 text-sm">No records on this date.</p>
-                <button onClick={() => setRecordDateFilter("")} className="text-indigo-500 text-xs hover:underline mt-1">Show all records</button>
-              </div>
-            ) : filtered.map((rec) => (
-              <div key={rec.id} className="bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
-                <div className="flex justify-between items-center mb-3">
-                  <span className="text-sm font-semibold text-indigo-600 bg-indigo-50 px-3 py-1 rounded-full">
-                    {formatTime(rec.createdAt)}
-                  </span>
-                  <span className="text-xs text-slate-400">Dr. {rec.doctorName}</span>
-                </div>
-                <div className="space-y-3">
-                  <div>
-                    <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Patient Summary</p>
-                    <p className="text-sm text-slate-700 whitespace-pre-wrap">{rec.patientSummary}</p>
+
+          {/* Patient Journal (Now shows Emotions and Food) */}
+          <div className="glass-strong p-6 flex flex-col h-[600px] print:h-auto print:break-before-page">
+            <h3 className="text-lg font-semibold text-slate-800 flex items-center gap-2 mb-4">
+              <FileText className="h-5 w-5 text-sky-500" /> Patient Journal & Diet Log
+            </h3>
+            <div className="overflow-y-auto flex-1 space-y-4 pr-2">
+              {journalEntries.length === 0 ? (
+                <p className="text-slate-500">No journal entries.</p>
+              ) : journalEntries.map((j) => (
+                <div key={j.id} className="bg-white p-5 rounded-xl border border-slate-200 shadow-sm print:shadow-none">
+                  <div className="flex justify-between items-center mb-3">
+                    <span className="text-sm font-semibold text-sky-600 bg-sky-50 px-3 py-1 rounded-full">
+                      {formatTime(j.createdAt || j.date)}
+                    </span>
+                    {j.emotion && (
+                      <span className="text-xs font-bold px-3 py-1 rounded-full bg-slate-100 text-slate-600 uppercase">
+                        Emotion: {j.emotion}
+                      </span>
+                    )}
                   </div>
-                  {rec.privateNotes && (
-                    <div className="bg-rose-50 p-3 rounded-lg border border-rose-100">
-                      <p className="text-xs font-bold text-rose-700 uppercase mb-1">Private Clinical Notes</p>
-                      <p className="text-sm text-rose-900 whitespace-pre-wrap">{rec.privateNotes}</p>
-                    </div>
-                  )}
-                  {rec.prescriptions && rec.prescriptions.length > 0 && (
-                    <div className="bg-emerald-50 p-3 rounded-lg border border-emerald-100">
-                      <p className="text-xs font-bold text-emerald-700 uppercase mb-1">Prescriptions</p>
-                      <p className="text-sm text-emerald-900">{rec.prescriptions.join(", ")}</p>
+                  <p className="text-slate-700 whitespace-pre-wrap">{j.entry}</p>
+
+                  {j.foodLog && (
+                    <div className="mt-4 p-3 bg-amber-50 rounded-lg border border-amber-100">
+                      <p className="text-xs font-bold text-amber-800 uppercase mb-1">Food Log</p>
+                      <p className="text-sm text-amber-900">{j.foodLog}</p>
                     </div>
                   )}
                 </div>
-              </div>
-            ));
-          })()}
-        </div>
-
-        {/* Patient Journal (Now shows Emotions and Food) */}
-        <div className="glass-strong p-6 space-y-4 print:break-before-page">
-          <h3 className="text-lg font-semibold text-slate-800 flex items-center gap-2">
-            <FileText className="h-5 w-5 text-sky-500" /> Patient Journal & Diet Log
-          </h3>
-          {journalEntries.length === 0 ? (
-            <p className="text-slate-500">No journal entries.</p>
-          ) : journalEntries.map((j) => (
-            <div key={j.id} className="bg-white p-5 rounded-xl border border-slate-200 shadow-sm print:shadow-none">
-              <div className="flex justify-between items-center mb-3">
-                <span className="text-sm font-semibold text-sky-600 bg-sky-50 px-3 py-1 rounded-full">
-                  {formatTime(j.createdAt || j.date)}
-                </span>
-                {j.emotion && (
-                  <span className="text-xs font-bold px-3 py-1 rounded-full bg-slate-100 text-slate-600 uppercase">
-                    Emotion: {j.emotion}
-                  </span>
-                )}
-              </div>
-              <p className="text-slate-700 whitespace-pre-wrap">{j.entry}</p>
-
-              {j.foodLog && (
-                <div className="mt-4 p-3 bg-amber-50 rounded-lg border border-amber-100">
-                  <p className="text-xs font-bold text-amber-800 uppercase mb-1">Food Log</p>
-                  <p className="text-sm text-amber-900">{j.foodLog}</p>
-                </div>
-              )}
+              ))}
             </div>
-          ))}
+          </div>
         </div>
 
       </div>

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
-import { firestore, collection, getDocs, doc, updateDoc, query, where } from "../firebase/config";
-import { getUserCollectionRef } from "../firebase/userPaths";
+import { firestore, collection, getDocs, doc, updateDoc, query, where } from "../../firebase/config";
+import { getUserCollectionRef } from "../../firebase/userPaths";
 import { Search, CalendarX2, User, Stethoscope, ChevronLeft, Calendar } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 

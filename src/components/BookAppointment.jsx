@@ -23,6 +23,7 @@ import {
   Stethoscope,
   CheckCircle,
   ChevronLeft,
+  AlertCircle,
 } from "lucide-react";
 
 const TIME_SLOTS = [
@@ -42,8 +43,28 @@ const BookAppointment = ({ onBooked }) => {
   const [timeSlot, setTimeSlot] = useState("");
   const [bookedSlots, setBookedSlots] = useState([]);
   const [loadingSlots, setLoadingSlots] = useState(false);
+  const [activeAppt, setActiveAppt] = useState(null);
 
   useEffect(() => {
+    const fetchActiveAppt = async () => {
+      const user = auth.currentUser;
+      if (!user) return;
+      try {
+        const q = query(
+          collection(firestore, "users", "patients", "accounts", user.uid, "appointments"),
+          where("status", "in", ["pending", "approved"])
+        );
+        const snap = await getDocs(q);
+        if (!snap.empty) {
+          setActiveAppt({ id: snap.docs[0].id, ...snap.docs[0].data() });
+        } else {
+          setActiveAppt(null);
+        }
+      } catch (err) {
+        console.error("Error checking active appointments:", err);
+      }
+    };
+
     const fetchDoctors = async () => {
       try {
         // Fetch doctor profiles (specialty, clinic info, etc.)
@@ -66,6 +87,8 @@ const BookAppointment = ({ onBooked }) => {
         setLoading(false);
       }
     };
+    
+    fetchActiveAppt();
     fetchDoctors();
   }, []);
 
@@ -197,6 +220,31 @@ const BookAppointment = ({ onBooked }) => {
 
   return (
     <div className="space-y-6">
+      {/* Active Appointment Restriction */}
+      {activeAppt && (
+        <div
+          className="p-6 rounded-2xl animate-fade-in-up border border-amber-200 bg-amber-50/50 flex flex-col items-center text-center gap-4"
+        >
+          <div className="w-12 h-12 rounded-full bg-amber-100 flex items-center justify-center text-amber-600">
+            <AlertCircle size={24} />
+          </div>
+          <div>
+            <h3 className="text-lg font-bold text-amber-900">Active Appointment Found</h3>
+            <p className="text-sm text-amber-700 mt-1 max-w-md">
+              You already have a <strong className="uppercase">{activeAppt.status}</strong> appointment scheduled. 
+              Please attend or cancel your current appointment before booking a new one.
+            </p>
+          </div>
+          <div className="bg-white/80 p-4 rounded-xl border border-amber-100 w-full max-w-sm text-left">
+            <p className="text-xs font-black text-amber-800 uppercase tracking-widest mb-1">Current Appointment</p>
+            <p className="text-sm font-bold text-slate-800">{activeAppt.doctorName}</p>
+            <p className="text-xs text-slate-500">
+              {activeAppt.date?.toDate ? activeAppt.date.toDate().toLocaleDateString() : "N/A"} • {activeAppt.timeSlot}
+            </p>
+          </div>
+        </div>
+      )}
+
       {/* Success Banner */}
       {success && (
         <div
@@ -229,7 +277,10 @@ const BookAppointment = ({ onBooked }) => {
         </div>
       )}
 
-      {/* Step 1: Select Doctor */}
+      {/* Only show steps if NO active appointment */}
+      {!activeAppt && (
+        <>
+          {/* Step 1: Select Doctor */}
       <div className="glass-strong p-6 space-y-4">
         <div className="flex items-center gap-3 pb-3" style={{ borderBottom: "1px solid var(--border-subtle)" }}>
           <div className="w-8 h-8 rounded-lg flex items-center justify-center bg-sky-50">
@@ -474,6 +525,8 @@ const BookAppointment = ({ onBooked }) => {
           </button>
         </div>
       </form>
+      </>
+      )}
     </div>
   );
 };

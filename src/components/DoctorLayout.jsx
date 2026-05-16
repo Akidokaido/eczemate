@@ -1,56 +1,65 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
-import { signOut } from "firebase/auth";
-import { auth } from "../firebase/config";
-import { LayoutDashboard, Calendar, Users, Activity, FileText, Settings, LogOut } from "lucide-react";
+import { onAuthStateChanged } from "firebase/auth";
+import { doc, getDoc } from "firebase/firestore";
+import { auth, firestore } from "../firebase/config";
+import { getUserDocRef } from "../firebase/userPaths";
+import { LayoutDashboard, Calendar, Users, Settings, LogOut, Menu, X } from "lucide-react";
+import Header from "./shared/Header";
+import Footer from "./shared/Footer";
 
 const DoctorLayout = ({ children, title }) => {
   const navigate = useNavigate();
   const location = useLocation();
+  const [user, setUser] = useState(null);
+  const [profile, setProfile] = useState(null);
 
-  const handleLogout = async () => { await signOut(auth); navigate("/login"); };
+  useEffect(() => {
+    const unsub = onAuthStateChanged(auth, async (currentUser) => {
+      setUser(currentUser);
+      if (currentUser) {
+        const docRef = getUserDocRef("doctor", currentUser.uid);
+        const snap = await getDoc(docRef);
+        if (snap.exists()) setProfile({ ...snap.data(), role: "doctor" });
+      }
+    });
+    return () => unsub();
+  }, []);
 
   const navItems = [
-    { path: "/doctorDashboard", label: "Dashboard", icon: LayoutDashboard },
-    { path: "/doctor/appointments", label: "Appointments", icon: Calendar },
-    { path: "/doctor/patients", label: "Patients", icon: Users },
-    { path: "/doctor/settings", label: "Settings", icon: Settings },
+    { id: "/doctor/Dashboard", label: "Dashboard", icon: LayoutDashboard },
+    { id: "/doctor/appointments", label: "Appointments", icon: Calendar },
+    { id: "/doctor/patients", label: "Patients", icon: Users },
+    { id: "/doctor/settings", label: "Settings", icon: Settings },
   ];
 
   return (
-    <div className="flex min-h-screen" style={{ background: "var(--bg-primary)" }}>
+    <div className="flex flex-col min-h-screen" style={{ background: "var(--bg-primary)" }}>
       <div className="bg-mesh" />
 
-      <aside className="relative z-10 w-64 glass-strong flex flex-col" style={{ borderRadius: 0, borderTop: "none", borderBottom: "none", borderLeft: "none" }}>
-        <div className="p-6" style={{ borderBottom: "1px solid var(--border-subtle)" }}>
-          <div className="flex items-center gap-2">
-            <img src="/images/logo.png" alt="EczeMate+" className="h-8" />
-          </div>
+      {/* Shared Header with Tabs */}
+      <Header 
+        user={user} 
+        profile={profile} 
+        isDashboard={true} 
+        tabs={navItems}
+        activeSection={location.pathname}
+        setActiveSection={(path) => navigate(path)}
+      />
+
+      <div className="flex flex-1">
+        {/* Main Content Area */}
+        <div className="relative z-10 flex-1 flex flex-col min-w-0">
+          <header className="px-4 sm:px-8 py-4 border-b border-slate-100 bg-white/50">
+             <h2 className="text-lg sm:text-xl font-bold truncate text-slate-800">{title}</h2>
+          </header>
+          <main className="p-4 sm:p-8 flex-1 w-full overflow-auto">
+            <div className="max-w-7xl mx-auto">
+              {children}
+            </div>
+          </main>
+          <Footer />
         </div>
-
-        <nav className="flex-1 p-4 space-y-1">
-          {navItems.map(({ path, label, icon: Icon }) => {
-            const isActive = location.pathname === path;
-            return (
-              <button key={path} onClick={() => navigate(path)}
-                className={`flex items-center gap-3 w-full text-left px-4 py-3 rounded-xl text-sm font-medium transition-all duration-300 ${
-                  isActive ? "bg-sky-50 text-sky-600" : "text-gray-500 hover:text-gray-800 hover:bg-gray-50"
-                }`}>
-                <Icon className="h-4 w-4" /> {label}
-              </button>
-            );
-          })}
-        </nav>
-      </aside>
-
-      <div className="relative z-10 flex-1 flex flex-col">
-        <header className="glass-strong flex items-center justify-between px-8 py-4" style={{ borderRadius: 0, borderTop: "none", borderRight: "none" }}>
-          <h2 className="text-xl font-bold" style={{ color: "var(--text-primary)" }}>{title}</h2>
-          <button onClick={handleLogout} className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium text-red-500 hover:bg-red-50 transition">
-            <LogOut className="h-4 w-4" /> Logout
-          </button>
-        </header>
-        <main className="p-8 flex-1 overflow-auto">{children}</main>
       </div>
     </div>
   );

@@ -41,9 +41,9 @@ const Login = () => {
           // status === "approved" → proceed
         }
 
-        if (role === "patient") navigate("/patientDashboard");
-        else if (role === "doctor") navigate("/doctorDashboard");
-        else if (role === "admin") navigate("/adminDashboard");
+        if (role === "patient") navigate("/patient/dashboard");
+        else if (role === "doctor") navigate("/doctor/dashboard");
+        else if (role === "admin") navigate("/admin/dashboard");
       } else {
         setError("Account not found. Please sign up first.");
       }

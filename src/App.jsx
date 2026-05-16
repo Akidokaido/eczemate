@@ -1,74 +1,82 @@
-import React from "react";
+import React, { Suspense, lazy } from "react";
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 
 // Auth
-import Login from "./auth/login.jsx";
-import Signup from "./auth/signup.jsx";
+const Login    = lazy(() => import("./auth/Login.jsx"));
+const Signup   = lazy(() => import("./auth/Signup.jsx"));
 
 // Main Pages
-import Home from "./pages/home.jsx";
+const Home = lazy(() => import("./pages/Home.jsx"));
 
 // Dashboards
-import PatientDashboard from "./pages/dashboard/patientDashboard.jsx";
-import DoctorDashboard from "./pages/dashboard/doctorDashboard.jsx";
+const PatientDashboard = lazy(() => import("./pages/dashboard/PatientDashboard.jsx"));
+const DoctorDashboard  = lazy(() => import("./pages/dashboard/DoctorDashboard.jsx"));
+const AdminDashboard   = lazy(() => import("./pages/dashboard/AdminDashboard.jsx"));
+
+// Patient Features
+const Journal      = lazy(() => import("./features/Journal.jsx"));
+const AiChat       = lazy(() => import("./features/AiChat.jsx"));
+const TrackProgress = lazy(() => import("./features/TrackProgress.jsx"));
 
 // Doctor Pages
-import Appointments from "./features/Appointments.jsx";
-import Patients from "./components/Patients.jsx";
-import Reports from "./components/Reports.jsx";
-import Settings from "./components/Settings.jsx";
-import PatientHistory from "./components/PatientHistory.jsx";
+const Appointments  = lazy(() => import("./components/doctor/Appointments.jsx"));
+const Patients      = lazy(() => import("./components/doctor/Patients.jsx"));
+const Reports       = lazy(() => import("./components/doctor/Reports.jsx"));
+const Settings      = lazy(() => import("./components/doctor/Settings.jsx"));
+const PatientHistory = lazy(() => import("./components/doctor/PatientHistory.jsx"));
 
 // Admin Pages
-import AdminDashboard from "./pages/dashboard/AdminDashboard.jsx";
-import ManagePatients from "./components/ManagePatients.jsx";
-import ManageDoctors from "./components/ManageDoctors.jsx";
-import ManageAppointments from "./components/ManageAppointments.jsx";
-
-// Features";
-import Journal from "./features/journal.jsx";
-import Aichatbox from "./features/aichat.jsx";
-import Trackprogress from "./features/trackprogress.jsx";
+const ManagePatients     = lazy(() => import("./components/doctor/ManagePatients.jsx"));
+const ManageDoctors      = lazy(() => import("./components/doctor/ManageDoctors.jsx"));
+const ManageAppointments = lazy(() => import("./components/doctor/ManageAppointments.jsx"));
 
 // Seed (temporary)
-import SeedPage from "./pages/SeedPage.jsx";
+const SeedPage = lazy(() => import("./pages/SeedPage.jsx"));
+
+// Loading fallback shown while a lazy chunk is being fetched
+const PageLoader = () => (
+  <div style={{ display: "flex", alignItems: "center", justifyContent: "center", minHeight: "100vh", background: "var(--bg-primary)" }}>
+    <div style={{ width: 40, height: 40, border: "3px solid #e2e8f0", borderTopColor: "#38bdf8", borderRadius: "50%", animation: "spin 0.7s linear infinite" }} />
+    <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+  </div>
+);
 
 function App() {
   return (
     <Router>
-      <Routes>
+      <Suspense fallback={<PageLoader />}>
+        <Routes>
 
-        {/* Public Routes */}
-        <Route path="/" element={<Home />} />
-        <Route path="/login" element={<Login />} />
-        <Route path="/signup" element={<Signup />} />
+          {/* Public Routes */}
+          <Route path="/"element={<Home />} />
+          <Route path="/login"element={<Login />} />
+          <Route path="/signup"element={<Signup />} />
 
-        {/* Patient */}
-        <Route path="/patientDashboard" element={<PatientDashboard />} />
-        <Route path="/journal" element={<Journal />} />
-        <Route path="/aichat" element={<Aichatbox />} />
-        <Route path="/trackprogress" element={<Trackprogress />} />
+          {/* Patient Routes */}
+          <Route path="/patient/dashboard" element={<PatientDashboard />} />
+          <Route path="/journal"element={<Journal />} />
+          <Route path="/aichat"element={<AiChat />} />
+          <Route path="/trackprogress"element={<TrackProgress />} />
 
-        {/* Doctor Main Dashboard */}
-        <Route path="/doctorDashboard" element={<DoctorDashboard />} />
+          {/* Doctor Routes */}
+          <Route path="/doctor/dashboard"element={<DoctorDashboard />} />
+          <Route path="/doctor/appointments"element={<Appointments />} />
+          <Route path="/doctor/patients"element={<Patients />} />
+          <Route path="/doctor/reports"element={<Reports />} />
+          <Route path="/doctor/settings"element={<Settings />} />
+          <Route path="/doctor/patient/:patientId"element={<PatientHistory />} />
 
-        {/* Doctor Sub Pages */}
-        <Route path="/doctor/appointments" element={<Appointments />} />
-        <Route path="/doctor/patients" element={<Patients />} />
-        <Route path="/doctor/reports" element={<Reports />} />
-        <Route path="/doctor/settings" element={<Settings />} />
-        <Route path="/doctor/patient/:patientId" element={<PatientHistory />} />
+          {/* Admin Routes */}
+          <Route path="/admin/dashboard"element={<AdminDashboard />} />
+          <Route path="/admin/patients"element={<ManagePatients />} />
+          <Route path="/admin/doctors"element={<ManageDoctors />} />
+          <Route path="/admin/appointments" element={<ManageAppointments />} />
 
-        {/* Admin Sub Pages */}
-        <Route path="/adminDashboard" element={<AdminDashboard />} />
-        <Route path="/admin/patients" element={<ManagePatients />} />
-        <Route path="/admin/doctors" element={<ManageDoctors />} />
-        <Route path="/admin/appointments" element={<ManageAppointments />} />
+          {/* Seed (temporary) */}
+          <Route path="/seed" element={<SeedPage />} />
 
-        {/* Seed (temporary) */}
-        <Route path="/seed" element={<SeedPage />} />
-
-      </Routes>
+        </Routes>
+      </Suspense>
     </Router>
   );
 }
