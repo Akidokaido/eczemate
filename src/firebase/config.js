@@ -26,13 +26,13 @@ import {
 } from "firebase/firestore"; // Modular Firestore functions
 
 const firebaseConfig = {
-  apiKey: "AIzaSyCGSMjwn6cViUzy2oRAMPOtd8rNZwT2TIY",  // Make sure to add your actual API key here
-  authDomain: "eczemate.firebaseapp.com",
-  projectId: "eczemate",
-  storageBucket: "eczemate.firebasestorage.app",
-  messagingSenderId: "677677113696",
-  appId: "1:677677113696:web:b91e096eb4218ac9687e05",
-  measurementId: "G-F4J7N0KLMQ"
+  apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
+  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
+  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
+  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
+  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
+  appId: import.meta.env.VITE_FIREBASE_APP_ID,
+  measurementId: import.meta.env.VITE_FIREBASE_MEASUREMENT_ID
 };
 
 // Initialize Firebase
