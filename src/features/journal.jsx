@@ -230,37 +230,53 @@ const Journal = () => {
           <p className="text-slate-500 font-bold mt-2">Generated Archive • {new Date().toLocaleDateString("en-MY", { dateStyle: 'full' })}</p>
         </div>
 
-        {/* Skin Progress Chart */}
+        {/* ═══════════════════════════════════════════ */}
+        {/* SECTION 1: SCORAD Progress Chart          */}
+        {/* ═══════════════════════════════════════════ */}
         <ScoradTrendChart data={trackProgressData} />
 
-        {/* Layout Grid */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start print:block">
+        {/* ═══════════════════════════════════════════ */}
+        {/* SECTION 2: Daily Care & Clinical Visit     */}
+        {/* ═══════════════════════════════════════════ */}
+        <div>
+          <div className="flex items-center gap-2 mb-4 print:hidden">
+            <div className="w-1.5 h-6 rounded-full bg-[#0D9488]" />
+            <h3 className="text-lg font-bold text-[#1C1917] tracking-tight">Daily Care & Clinical Visit</h3>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+            <ActionItemsSection actionItems={actionItems} toggleActionItem={toggleActionItem} />
+            <AppointmentSection upcomingAppts={upcomingAppts} onCancelClick={(appt) => { setCancelModalAppt(appt); setCancelReason(""); }} />
+          </div>
+        </div>
 
-          {/* LEFT COLUMN */}
-          <div className="lg:col-span-7 flex flex-col gap-6">
-            <JournalComposer 
-              newEntry={newEntry} setNewEntry={setNewEntry}
-              selectedEmotion={selectedEmotion} setSelectedEmotion={setSelectedEmotion}
-              foodLog={foodLog} setFoodLog={setFoodLog}
-              handlePostEntry={handlePostEntry} submitting={submitting} error={error}
-            />
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-              <ActionItemsSection actionItems={actionItems} toggleActionItem={toggleActionItem} />
-              <AppointmentSection upcomingAppts={upcomingAppts} onCancelClick={(appt) => { setCancelModalAppt(appt); setCancelReason(""); }} />
+        {/* ═══════════════════════════════════════════ */}
+        {/* SECTION 3: Today's Reflection & Timeline   */}
+        {/* ═══════════════════════════════════════════ */}
+        <div>
+          <div className="flex items-center gap-2 mb-4 print:hidden">
+            <div className="w-1.5 h-6 rounded-full bg-[#F97316]" />
+            <h3 className="text-lg font-bold text-[#1C1917] tracking-tight">Today's Reflection & Timeline</h3>
+          </div>
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start print:block">
+            {/* Write Entry */}
+            <div className="lg:col-span-7">
+              <JournalComposer 
+                newEntry={newEntry} setNewEntry={setNewEntry}
+                selectedEmotion={selectedEmotion} setSelectedEmotion={setSelectedEmotion}
+                foodLog={foodLog} setFoodLog={setFoodLog}
+                handlePostEntry={handlePostEntry} submitting={submitting} error={error}
+              />
+            </div>
+            {/* Past Entries Timeline */}
+            <div className="lg:col-span-5 h-full">
+              <PastEntriesSection 
+                loading={loading} entries={entries} filteredEntries={filteredEntries}
+                selectedDate={selectedDate} setSelectedDate={setSelectedDate}
+                handleAnalyzeTriggers={handleAnalyzeTriggers} isAnalyzing={isAnalyzing}
+                aiInsight={aiInsight} setAiInsight={setAiInsight} formatTime={formatTime}
+              />
             </div>
           </div>
-
-          {/* RIGHT COLUMN */}
-          <div className="lg:col-span-5 h-full">
-            <PastEntriesSection 
-              loading={loading} entries={entries} filteredEntries={filteredEntries}
-              selectedDate={selectedDate} setSelectedDate={setSelectedDate}
-              handleAnalyzeTriggers={handleAnalyzeTriggers} isAnalyzing={isAnalyzing}
-              aiInsight={aiInsight} setAiInsight={setAiInsight} formatTime={formatTime}
-            />
-          </div>
-
         </div>
       </div>
       

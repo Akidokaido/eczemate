@@ -3,7 +3,8 @@ import { useParams } from "react-router-dom";
 import DoctorLayout from "../DoctorLayout";
 import { firestore, auth, onAuthStateChanged, collection, query, where, getDocs, orderBy, getDoc, addDoc, serverTimestamp, Timestamp } from "../../firebase/config";
 import { getUserDocRef } from "../../firebase/userPaths";
-import { Send, FileText, CheckSquare, Printer, Stethoscope, CalendarDays, ClipboardList, CalendarPlus, Clock } from "lucide-react";
+import { Send, FileText, CheckSquare, Printer, Stethoscope, CalendarDays, ClipboardList, CalendarPlus, Clock, TrendingUp } from "lucide-react";
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine } from "recharts";
 
 const TIME_SLOTS = [
   "8:00 AM", "9:00 AM", "10:00 AM", "11:00 AM",
@@ -25,6 +26,7 @@ const PatientHistory = () => {
   const [errorMsg, setErrorMsg] = useState("");
   const [medicalRecords, setMedicalRecords] = useState([]);
   const [recordDateFilter, setRecordDateFilter] = useState("");
+  const [scoradHistory, setScoradHistory] = useState([]);
 
   // Set Future Appointment state
   const [apptDate, setApptDate] = useState("");
@@ -116,6 +118,24 @@ const PatientHistory = () => {
           } catch (err2) {
             console.error("Error fetching medical records:", err2);
           }
+        }
+
+        // 4. Fetch SCORAD Track Progress
+        try {
+          const trackSnap = await getDocs(collection(firestore, "users", "patients", "accounts", patientId, "trackProgress"));
+          let tracks = trackSnap.docs.map(d => d.data());
+          tracks.sort((a, b) => {
+            const tA = a.timestamp?.toMillis ? a.timestamp.toMillis() : new Date(a.timestamp || a.dateKey || 0).getTime();
+            const tB = b.timestamp?.toMillis ? b.timestamp.toMillis() : new Date(b.timestamp || b.dateKey || 0).getTime();
+            return tA - tB;
+          });
+          const chartData = tracks.map(t => ({
+            date: t.dateKey || (t.timestamp?.toDate ? t.timestamp.toDate().toLocaleDateString("en-MY", { day: "numeric", month: "short" }) : "?"),
+            score: Math.round(t.scoradScore ?? t.finalPercentage ?? 0),
+          })).filter(t => t.score > 0);
+          setScoradHistory(chartData);
+        } catch (e) {
+          console.error("Error fetching track progress:", e);
         }
       } catch (err) {
         console.error("Critical Error in fetchData:", err);
@@ -319,6 +339,56 @@ const PatientHistory = () => {
           <button onClick={exportToPDF} className="print-hide btn-ghost flex items-center gap-2 text-sm py-2 px-4 rounded-xl border border-slate-200 hover:bg-slate-50">
             <Printer className="h-4 w-4" /> Export Patient File
           </button>
+        </div>
+
+        {/* SCORAD Trend Chart */}
+        <div className="bg-white border border-slate-100 rounded-2xl shadow-sm p-6 print-hide">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-lg font-bold text-slate-800 flex items-center gap-2">
+              <TrendingUp className="h-5 w-5 text-[#0D9488]" /> SCORAD Trend
+            </h3>
+            {scoradHistory.length > 0 && (
+              <div className="flex items-center gap-4 text-xs font-bold">
+                <span className="flex items-center gap-1"><span className="w-3 h-3 rounded-full bg-emerald-400 inline-block"></span> Mild (0–25)</span>
+                <span className="flex items-center gap-1"><span className="w-3 h-3 rounded-full bg-amber-400 inline-block"></span> Moderate (26–50)</span>
+                <span className="flex items-center gap-1"><span className="w-3 h-3 rounded-full bg-rose-500 inline-block"></span> Severe (&gt;50)</span>
+              </div>
+            )}
+          </div>
+          {scoradHistory.length === 0 ? (
+            <div className="h-40 flex flex-col items-center justify-center text-slate-400">
+              <TrendingUp className="h-8 w-8 mb-2 opacity-30" />
+              <p className="text-sm font-semibold">No SCORAD data recorded yet.</p>
+            </div>
+          ) : (
+            <div className="h-56">
+              <ResponsiveContainer width="100%" height="100%">
+                <LineChart data={scoradHistory} margin={{ top: 5, right: 20, left: 0, bottom: 5 }}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
+                  <XAxis dataKey="date" tick={{ fontSize: 11, fill: '#94a3b8', fontWeight: 600 }} tickLine={false} axisLine={false} />
+                  <YAxis domain={[0, 103]} tick={{ fontSize: 11, fill: '#94a3b8', fontWeight: 600 }} tickLine={false} axisLine={false} width={30} />
+                  <Tooltip
+                    contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 20px rgba(0,0,0,0.1)', fontSize: 13 }}
+                    formatter={(val) => [`${val}`, 'SCORAD Score']}
+                  />
+                  <ReferenceLine y={25} stroke="#86efac" strokeDasharray="4 4" strokeWidth={1.5} />
+                  <ReferenceLine y={50} stroke="#fbbf24" strokeDasharray="4 4" strokeWidth={1.5} />
+                  <Line
+                    type="monotone"
+                    dataKey="score"
+                    stroke="#0D9488"
+                    strokeWidth={2.5}
+                    dot={(props) => {
+                      const { cx, cy, payload } = props;
+                      const color = payload.score > 50 ? '#ef4444' : payload.score > 25 ? '#f59e0b' : '#10b981';
+                      return <circle key={cx} cx={cx} cy={cy} r={5} fill={color} stroke="white" strokeWidth={2} />;
+                    }}
+                    activeDot={{ r: 7, stroke: '#0D9488', strokeWidth: 2 }}
+                  />
+                </LineChart>
+              </ResponsiveContainer>
+            </div>
+          )}
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 print-hide">

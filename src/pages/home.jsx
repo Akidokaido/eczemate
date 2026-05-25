@@ -31,6 +31,15 @@ const Home = () => {
     return () => unsub();
   }, []);
 
+  useEffect(() => {
+    const hash = window.location.hash?.replace("#", "");
+    if (hash) {
+      setTimeout(() => {
+        document.getElementById(hash)?.scrollIntoView({ behavior: "smooth" });
+      }, 150);
+    }
+  }, []);
+
   return (
     <div className="min-h-screen flex flex-col font-sans text-[#1C1917] bg-[#FDFBF7]">
       <Header user={user} profile={profile} />
@@ -38,13 +47,13 @@ const Home = () => {
       <main className="flex-1 w-full space-y-32 pb-32">
         
         {/* HERO SECTION */}
-        <section className="relative w-full max-w-7xl mx-auto px-6 lg:px-8 pt-16 lg:pt-32 flex flex-col lg:flex-row items-center gap-16 lg:gap-20">
+        <section className="relative w-full max-w-7xl mx-auto px-6 lg:px-8 pt-16 lg:pt-32 flex flex-col items-center text-center">
           
           {/* Organic Background Shapes */}
-          <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-[#0D9488]/10 blur-3xl rounded-full mix-blend-multiply opacity-70 pointer-events-none translate-x-1/3 -translate-y-1/4" />
-          <div className="absolute top-40 right-40 w-[400px] h-[400px] bg-[#F97316]/5 blur-3xl rounded-full mix-blend-multiply opacity-60 pointer-events-none" />
+          <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[700px] h-[500px] bg-[#0D9488]/10 blur-3xl rounded-full mix-blend-multiply opacity-70 pointer-events-none -translate-y-1/4" />
+          <div className="absolute top-40 right-1/4 w-[400px] h-[400px] bg-[#F97316]/5 blur-3xl rounded-full mix-blend-multiply opacity-60 pointer-events-none" />
 
-          <div className="flex-1 space-y-8 animate-fade-in-up relative z-10">
+          <div className="space-y-8 animate-fade-in-up relative z-10 max-w-4xl">
             <div className="inline-flex items-center gap-2 rounded-full bg-white px-4 py-2 text-sm font-bold text-[#0D9488] shadow-sm border border-[#0D9488]/10 animate-pulse">
               <Sparkles size={16} className="text-[#F97316]" /> Introducing AI Wellness Insights
             </div>
@@ -53,11 +62,11 @@ const Home = () => {
               Healing begins with <span className="text-[#0D9488]">understanding.</span>
             </h1>
             
-            <p className="text-lg sm:text-xl text-[#64748B] leading-relaxed max-w-xl">
+            <p className="text-lg sm:text-xl text-[#64748B] leading-relaxed max-w-2xl mx-auto">
               Track your flare-ups, uncover hidden triggers, and connect with dermatologists on a platform designed to bring clarity to your eczema journey.
             </p>
             
-            <div className="flex flex-wrap items-center gap-4 pt-4">
+            <div className="flex flex-wrap items-center justify-center gap-4 pt-4">
               <button onClick={() => navigate("/signup")} className="bg-[#F97316] hover:bg-[#ea580c] text-white font-bold py-4 px-8 rounded-full shadow-[0_8px_20px_rgba(249,115,22,0.25)] hover:shadow-[0_12px_25px_rgba(249,115,22,0.35)] hover:-translate-y-0.5 transition-all duration-300 flex items-center gap-2">
                 Start Your Journey <ArrowRight size={18} />
               </button>
@@ -66,50 +75,11 @@ const Home = () => {
               </button>
             </div>
           </div>
-
-          <div className="flex-1 relative z-10 w-full animate-fade-in-up" style={{ animationDelay: "200ms" }}>
-            <div className="relative mx-auto max-w-[450px]">
-              <div className="absolute inset-0 bg-gradient-to-tr from-[#0D9488]/20 to-transparent rounded-[3rem] blur-2xl transform rotate-6 scale-105" />
-              <img src="/hero-mockup.png" alt="EczeMate App Dashboard" className="relative z-10 w-full rounded-[2.5rem] shadow-[0_20px_50px_rgba(13,148,136,0.15)] border-4 border-white object-cover" />
-              
-              {/* Floating Element */}
-              <div className="absolute -bottom-6 -left-10 bg-white p-4 rounded-2xl shadow-xl border border-slate-100 flex items-center gap-4 z-20 animate-bounce" style={{ animationDuration: '3s' }}>
-                <div className="w-12 h-12 rounded-full bg-[#0D9488]/10 flex items-center justify-center text-[#0D9488]">
-                  <Activity size={24} />
-                </div>
-                <div>
-                  <p className="text-sm font-bold text-[#1C1917]">SCORAD Score</p>
-                  <p className="text-xs font-semibold text-[#0D9488] mt-0.5">Mild • Improving</p>
-                </div>
-              </div>
-            </div>
-          </div>
         </section>
 
-        {/* TRUST BAR */}
-        <section className="w-full border-y border-slate-200/60 bg-white/50 backdrop-blur-sm py-8">
-          <div className="max-w-7xl mx-auto px-6 lg:px-8 flex flex-col md:flex-row items-center justify-center gap-8 md:gap-16">
-            <div className="flex items-center gap-2">
-              <div className="flex -space-x-2">
-                {[1,2,3,4].map(i => <div key={i} className={`w-10 h-10 rounded-full border-2 border-white bg-slate-200 z-${5-i}`} />)}
-              </div>
-              <div className="ml-3">
-                <div className="flex items-center gap-1 text-[#F97316]">
-                  {[1,2,3,4,5].map(i => <Star key={i} size={14} fill="currentColor" />)}
-                </div>
-                <p className="text-sm font-bold text-[#1C1917] mt-0.5">Trusted by 50,000+ users</p>
-              </div>
-            </div>
-            <div className="hidden md:block w-px h-12 bg-slate-200" />
-            <div className="flex items-center gap-8 text-[#64748B] font-bold text-sm uppercase tracking-widest">
-              <span className="flex items-center gap-2"><Shield size={18} className="text-[#0D9488]"/> Dermatologist Approved</span>
-              <span className="hidden sm:flex items-center gap-2"><Heart size={18} className="text-[#F97316]"/> Patient Centric</span>
-            </div>
-          </div>
-        </section>
 
         {/* PROBLEM / SOLUTION SPLIT */}
-        <section className="max-w-7xl mx-auto px-6 lg:px-8">
+        <section id="about" className="max-w-7xl mx-auto px-6 lg:px-8 scroll-mt-24">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-0 rounded-[2.5rem] overflow-hidden shadow-[0_20px_50px_rgba(0,0,0,0.05)] border border-slate-100">
             {/* The Problem */}
             <div className="bg-slate-50 p-12 lg:p-20 flex flex-col justify-center">
@@ -153,7 +123,7 @@ const Home = () => {
         </section>
 
         {/* FEATURES BENTO GRID */}
-        <section className="max-w-7xl mx-auto px-6 lg:px-8">
+        <section id="features" className="max-w-7xl mx-auto px-6 lg:px-8 scroll-mt-24">
           <div className="text-center space-y-4 max-w-2xl mx-auto mb-16">
             <h2 className="text-4xl font-extrabold text-[#1C1917]">Everything you need to heal.</h2>
             <p className="text-lg text-[#64748B]">A complete suite of tools designed specifically for eczema management.</p>
@@ -269,18 +239,18 @@ const Home = () => {
         </section>
 
         {/* EDUCATIONAL RESOURCES */}
-        <section className="max-w-7xl mx-auto px-6 lg:px-8">
+        <section id="educational-resources" className="max-w-7xl mx-auto px-6 lg:px-8 scroll-mt-24">
           <div className="text-center space-y-4 max-w-3xl mx-auto mb-16">
             <h2 className="text-4xl font-extrabold text-[#1C1917]">Educational Resources</h2>
             <p className="text-lg text-[#64748B]">Access helpful materials to learn more about eczema management and healthy living.</p>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {[
-              { icon: FileText, title: "Eczema Guide", desc: "A comprehensive guide to understanding symptoms and treatments.", action: "Download PDF", actionIcon: Download },
-              { icon: Coffee, title: "Diet & Triggers", desc: "Learn how nutrition impacts inflammation and identifying trigger foods.", action: "Download PDF", actionIcon: Download },
-              { icon: Play, title: "Video Tutorials", desc: "Watch experts demonstrate proper bathing and moisturizing techniques.", action: "Watch Videos", actionIcon: Play },
-              { icon: Shield, title: "Skincare Tips", desc: "Tips for choosing the right moisturizers, soaps, and laundry detergents.", action: "Download PDF", actionIcon: Download }
-            ].map(({ icon: Icon, title, desc, action, actionIcon: ActionIcon }, i) => (
+              { icon: FileText, title: "Eczema Guide", desc: "A comprehensive guide to understanding symptoms and treatments.", action: "Read Article", actionIcon: Download, url: "https://nationaleczema.org/eczema/types-of-eczema/atopic-dermatitis/" },
+              { icon: Coffee, title: "Diet & Triggers", desc: "Learn how nutrition impacts inflammation and identifying trigger foods.", action: "Read Article", actionIcon: Download, url: "https://nationaleczema.org/diet-nutrition/" },
+              { icon: Play, title: "Video Tutorials", desc: "Watch experts demonstrate proper bathing and moisturizing techniques.", action: "Watch Video", actionIcon: Play, url: "https://www.youtube.com/watch?v=30yogUkbdFc" },
+              { icon: Shield, title: "Skincare Tips", desc: "Tips for choosing the right moisturizers, soaps, and laundry detergents.", action: "Read Article", actionIcon: Download, url: "https://www.aad.org/public/diseases/eczema/childhood/treating/skin-care" }
+            ].map(({ icon: Icon, title, desc, action, actionIcon: ActionIcon, url }, i) => (
               <div key={title} className="bg-white rounded-3xl p-8 shadow-[0_4px_20px_rgb(0,0,0,0.02)] border border-slate-50 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6 hover:border-[#0D9488]/20 hover:shadow-xl transition-all duration-300 group">
                  <div className="flex items-start gap-5">
                     <div className="w-14 h-14 rounded-2xl flex items-center justify-center flex-shrink-0 bg-[#FDFBF7] border border-slate-100 text-[#0D9488] group-hover:scale-110 transition-transform duration-300">
@@ -291,9 +261,9 @@ const Home = () => {
                       <p className="text-[#64748B] text-sm leading-relaxed">{desc}</p>
                     </div>
                  </div>
-                 <button className="flex-shrink-0 flex items-center gap-2 text-sm font-bold text-[#F97316] hover:text-white bg-[#F97316]/10 hover:bg-[#F97316] px-5 py-3 rounded-full transition-colors w-full sm:w-auto justify-center">
+                 <a href={url} target="_blank" rel="noopener noreferrer" className="flex-shrink-0 flex items-center gap-2 text-sm font-bold text-[#F97316] hover:text-white bg-[#F97316]/10 hover:bg-[#F97316] px-5 py-3 rounded-full transition-colors w-full sm:w-auto justify-center">
                     <ActionIcon size={18} /> {action}
-                 </button>
+                 </a>
               </div>
             ))}
           </div>

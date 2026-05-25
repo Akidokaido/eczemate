@@ -20,7 +20,7 @@ const AppointmentSection = ({ upcomingAppts, onCancelClick }) => {
           <p className="text-sm text-slate-400 font-bold">No upcoming visits</p>
         </div>
       ) : (
-        <div className="space-y-6">
+        <div className="space-y-6 max-h-[300px] overflow-y-auto pr-1 custom-scrollbar">
           {upcomingAppts.slice(0, 2).map(appt => {
             const apptDate = appt.date?.toDate ? appt.date.toDate() : new Date(appt.date);
             return (

@@ -4,7 +4,7 @@ import { onAuthStateChanged } from "firebase/auth";
 import { doc, getDoc } from "firebase/firestore";
 import { auth, firestore } from "../firebase/config";
 import { getUserDocRef } from "../firebase/userPaths";
-import { LayoutDashboard, Calendar, Users, Settings, LogOut, Menu, X } from "lucide-react";
+import { LayoutDashboard, Calendar, Users, LogOut, Menu, X } from "lucide-react";
 import Header from "./shared/Header";
 import Footer from "./shared/Footer";
 
@@ -30,7 +30,6 @@ const DoctorLayout = ({ children, title }) => {
     { id: "/doctor/Dashboard", label: "Dashboard", icon: LayoutDashboard },
     { id: "/doctor/appointments", label: "Appointments", icon: Calendar },
     { id: "/doctor/patients", label: "Patients", icon: Users },
-    { id: "/doctor/settings", label: "Settings", icon: Settings },
   ];
 
   return (

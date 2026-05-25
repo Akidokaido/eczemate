@@ -6,10 +6,12 @@ const AiChat = () => {
   const [chatHistory, setChatHistory] = useState([]);
   const [loading, setLoading] = useState(false);
   const [isTyping, setIsTyping] = useState(false);
-  const chatEndRef = useRef(null);
+  const chatContainerRef = useRef(null);
 
   useEffect(() => {
-    chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    if (chatContainerRef.current) {
+      chatContainerRef.current.scrollTop = chatContainerRef.current.scrollHeight;
+    }
   }, [chatHistory]);
 
   const handleSendMessage = async (e) => {
@@ -66,7 +68,7 @@ const AiChat = () => {
         </h2>
 
         {/* Chat History */}
-        <div className="max-h-[400px] overflow-y-scroll mb-6 space-y-4">
+        <div ref={chatContainerRef} className="max-h-[400px] overflow-y-scroll mb-6 space-y-4">
           {chatHistory.map((chat, index) => (
             <div
               key={index}
@@ -112,23 +114,8 @@ const AiChat = () => {
           </button>
         </form>
 
-        {/* Trust Indicators */}
-        <div className="mt-8 flex justify-around items-center text-xs font-bold text-[#64748B] uppercase tracking-widest pt-6 border-t border-slate-50">
-          <div className="flex items-center gap-2">
-            <Shield className="h-4 w-4 text-[#0D9488]" />
-            <span>Secure Chat</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <Heart className="h-4 w-4 text-[#F97316]" />
-            <span>Empathy</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <Droplets className="h-4 w-4 text-[#0D9488]" />
-            <span>Skincare</span>
-          </div>
-        </div>
+       
       </div>
-      <div ref={chatEndRef} />
     </div>
   );
 };

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import {
   auth, firestore, onAuthStateChanged,
   doc, getDoc, collection, query, where, getDocs, updateDoc
@@ -23,6 +23,16 @@ const PatientDashboard = () => {
   const [loading, setLoading] = useState(true);
   const [cancelModalAppt, setCancelModalAppt] = useState(null);
   const navigate = useNavigate();
+  const location = useLocation();
+
+  useEffect(() => {
+    if (location.state?.activeTab) {
+      setActiveSection(location.state.activeTab);
+      if (location.state.activeTab === "appointment") {
+        setApptView("book");
+      }
+    }
+  }, [location.state]);
 
   const fetchAppointments = async (uid) => {
     try {

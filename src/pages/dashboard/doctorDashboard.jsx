@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import DoctorLayout from "../../components/DoctorLayout";
 import { auth, firestore, onAuthStateChanged, collection, query, where, getDocs } from "../../firebase/config";
 import { getUserCollectionRef } from "../../firebase/userPaths";
-import { Calendar, Users, Settings, AlertCircle, Clock, ChevronRight, Activity, TrendingUp } from "lucide-react";
+import { Calendar, Users, AlertCircle, Clock, ChevronRight, Activity, TrendingUp } from "lucide-react";
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip as RechartsTooltip, Legend } from "recharts";
 
 const COLORS = ['#0D9488', '#F97316', '#ef4444']; // Deep Teal, Warm Coral, Red
@@ -12,10 +12,11 @@ const DoctorDashboard = () => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState({ totalAppts: 0, pendingAppts: 0, patients: 0 });
-  const [allAppointments, setAllAppointments] = useState([]); // Store all for easy filtering
+  const [allAppointments, setAllAppointments] = useState([]);
   const [scheduleDate, setScheduleDate] = useState(new Date().toISOString().split("T")[0]);
   const [severityData, setSeverityData] = useState([]);
   const [alerts, setAlerts] = useState([]);
+  const [showAlertsModal, setShowAlertsModal] = useState(false);
 
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, async (user) => {
@@ -56,10 +57,28 @@ const DoctorDashboard = () => {
                 const latest = tracks[0];
                 const score = latest.scoradScore || latest.finalPercentage || 0;
                 const dKey = latest.dateKey;
+                const latestTrackTime = latest.timestamp?.toMillis ? latest.timestamp.toMillis() : new Date(latest.timestamp || 0).getTime();
                 
                 if (score > 50) {
                    severities.Severe++;
-                   alertsTemp.push({ patientId: pat.id, name: pat.name || pat.email, score: Math.round(score), date: dKey });
+                   // Check if doctor already responded with an action item after this SCORAD
+                   let alertHandled = false;
+                   try {
+                     const actionSnap = await getDocs(collection(firestore, "users", "patients", "accounts", pat.id, "actionItems"));
+                     if (!actionSnap.empty) {
+                       const actions = actionSnap.docs.map(d => d.data());
+                       const latestAction = actions.reduce((latest, a) => {
+                         const aTime = a.createdAt?.toMillis ? a.createdAt.toMillis() : new Date(a.createdAt || 0).getTime();
+                         return aTime > latest ? aTime : latest;
+                       }, 0);
+                       if (latestAction > latestTrackTime) {
+                         alertHandled = true;
+                       }
+                     }
+                   } catch (e) { /* ignore - treat as not handled */ }
+                   if (!alertHandled) {
+                     alertsTemp.push({ patientId: pat.id, name: pat.name || pat.email, score: Math.round(score), date: dKey });
+                   }
                 } else if (score >= 26) {
                    severities.Moderate++;
                 } else {
@@ -110,10 +129,9 @@ const DoctorDashboard = () => {
     });
 
   const cards = [
-    { label: "Assigned Patients", value: stats.patients, sub: "Currently under your care", icon: Users, color: "#0D9488", path: "/doctor/patients" },
-    { label: "Pending Approvals", value: stats.pendingAppts, sub: "Appointments to review", icon: Clock, color: "#F97316", path: "/doctor/appointments" },
-    { label: "High Risk Alerts", value: alerts.length, sub: "Patients requiring attention", icon: AlertCircle, color: "#ef4444", path: "/doctor/patients" },
-    { label: "Settings", value: null, sub: "Account & prefs", icon: Settings, color: "#64748B", path: "/doctor/settings" },
+    { label: "Assigned Patients", value: stats.patients, sub: "Currently under your care", icon: Users, color: "#0D9488", onClick: () => navigate("/doctor/patients") },
+    { label: "Pending Approvals", value: stats.pendingAppts, sub: "Appointments to review", icon: Clock, color: "#F97316", onClick: () => navigate("/doctor/appointments") },
+    { label: "High Risk Alerts", value: alerts.length, sub: "Patients requiring attention", icon: AlertCircle, color: "#ef4444", onClick: () => setShowAlertsModal(true) },
   ];
 
   if (loading) {
@@ -129,9 +147,9 @@ const DoctorDashboard = () => {
       <div className="space-y-6 animate-fade-in-up pb-8">
         
         {/* Stat Cards Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          {cards.map(({ label, value, sub, icon: Icon, color, path }, i) => (
-            <div key={label} onClick={() => navigate(path)} className="bg-white border border-slate-100 p-6 rounded-2xl shadow-sm hover:shadow-md transition-shadow cursor-pointer relative overflow-hidden group">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {cards.map(({ label, value, sub, icon: Icon, color, onClick }, i) => (
+            <div key={label} onClick={onClick} className="bg-white border border-slate-100 p-6 rounded-2xl shadow-sm hover:shadow-md transition-shadow cursor-pointer relative overflow-hidden group">
               <div className="absolute -right-6 -top-6 opacity-[0.03] transform group-hover:scale-110 transition-transform duration-500">
                  <Icon size={120} style={{ color }} />
               </div>
@@ -148,53 +166,43 @@ const DoctorDashboard = () => {
         {/* Main Content Grid */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           
-          {/* Left Column: Charts and Alerts (2/3) */}
+           {/* Left Column: Charts (2/3) */}
           <div className="lg:col-span-2 space-y-6">
-             
-             {/* Clinical Alerts Panel */}
-             <div className="bg-white border border-rose-100 rounded-2xl shadow-sm overflow-hidden flex flex-col">
-                <div className="bg-rose-50 px-6 py-4 flex items-center justify-between border-b border-rose-100">
-                   <h3 className="font-bold text-rose-800 flex items-center gap-2"><AlertCircle className="h-5 w-5"/> High Priority SCORAD Alerts</h3>
-                   <span className="bg-rose-200 text-rose-800 text-xs font-bold px-3 py-1 rounded-full">{alerts.length} Active</span>
-                </div>
-                <div className="p-2 flex-1">
-                   {alerts.length === 0 ? (
-                      <div className="p-8 text-center text-slate-400 flex flex-col items-center">
-                         <Activity className="h-8 w-8 mb-2 opacity-50" />
-                         <p className="text-sm font-semibold">No severe cases reported recently.</p>
-                      </div>
-                   ) : (
-                      <div className="max-h-[250px] overflow-y-auto pr-2 custom-scrollbar p-4 space-y-3">
-                         {alerts.map((alert, idx) => (
-                            <div key={idx} className="flex items-center justify-between bg-white border border-slate-100 p-4 rounded-xl shadow-sm hover:border-rose-200 transition">
-                               <div>
-                                  <p className="font-bold text-slate-800">{alert.name}</p>
-                                  <p className="text-xs font-semibold text-slate-500 mt-0.5">Reported on {alert.date}</p>
-                               </div>
-                               <div className="flex items-center gap-4">
-                                  <div className="text-right">
-                                     <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-0.5">SCORAD</p>
-                                     <p className="text-xl font-black text-rose-600">{alert.score}</p>
-                                  </div>
-                                  <button onClick={() => navigate(`/doctor/patient/${alert.patientId}`)} className="bg-rose-50 text-rose-600 p-2 rounded-lg hover:bg-rose-100 transition">
-                                     <ChevronRight size={20} />
-                                  </button>
-                               </div>
-                            </div>
-                         ))}
-                      </div>
-                   )}
-                </div>
-             </div>
 
              {/* Demographics Chart */}
              <div className="bg-white border border-slate-100 rounded-2xl shadow-sm p-6">
-                <div className="flex items-center justify-between mb-4">
+                <div className="mb-4">
                    <h3 className="font-bold text-slate-800 flex items-center gap-2"><TrendingUp className="text-emerald-500 h-5 w-5"/> Patient SCORAD Distribution</h3>
+                   <p className="text-xs text-slate-400 font-semibold mt-1">Based on each patient's most recent SCORAD assessment. Scores are grouped by clinical severity thresholds.</p>
                 </div>
+
+                {/* Severity Breakdown Cards */}
+                {!(severityData.length > 0 && severityData[0].name === "No Data") && (
+                  <div className="grid grid-cols-3 gap-3 mb-5">
+                    {[
+                      { label: "Mild", range: "0 – 25", color: "#0D9488", bg: "bg-emerald-50", border: "border-emerald-100", text: "text-emerald-700" },
+                      { label: "Moderate", range: "26 – 50", color: "#F97316", bg: "bg-orange-50", border: "border-orange-100", text: "text-orange-700" },
+                      { label: "Severe", range: "> 50", color: "#ef4444", bg: "bg-rose-50", border: "border-rose-100", text: "text-rose-700" },
+                    ].map(({ label, range, color, bg, border, text }) => {
+                      const count = severityData.find(d => d.name.toLowerCase().includes(label.toLowerCase()))?.value || 0;
+                      return (
+                        <div key={label} className={`${bg} ${border} border rounded-xl p-3 text-center`}>
+                          <p className={`text-2xl font-black ${text}`}>{count}</p>
+                          <p className={`text-xs font-bold ${text} uppercase tracking-wider`}>{label}</p>
+                          <p className="text-[10px] text-slate-400 font-semibold mt-0.5">Score {range}</p>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+
                 <div className="h-[250px] w-full">
                    {severityData.length > 0 && severityData[0].name === "No Data" ? (
-                      <div className="h-full flex items-center justify-center text-slate-400 text-sm font-semibold">Not enough tracking data from patients yet.</div>
+                      <div className="h-full flex flex-col items-center justify-center text-slate-400">
+                        <TrendingUp className="h-8 w-8 mb-2 opacity-30" />
+                        <p className="text-sm font-semibold">Not enough tracking data from patients yet.</p>
+                        <p className="text-xs mt-1">Patients need to complete at least one SCORAD assessment.</p>
+                      </div>
                    ) : (
                       <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={0}>
                         <PieChart>
@@ -207,6 +215,7 @@ const DoctorDashboard = () => {
                             paddingAngle={5}
                             dataKey="value"
                             stroke="none"
+                            label={({ name, value }) => `${value}`}
                           >
                             {severityData.map((entry, index) => (
                               <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
@@ -215,6 +224,7 @@ const DoctorDashboard = () => {
                           <RechartsTooltip 
                              contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
                              itemStyle={{ color: '#334155', fontWeight: 'bold' }}
+                             formatter={(value, name) => [`${value} patient${value !== 1 ? 's' : ''}`, name]}
                           />
                           <Legend verticalAlign="bottom" height={36} iconType="circle" wrapperStyle={{ fontSize: '12px', fontWeight: '600', color: '#64748b' }}/>
                         </PieChart>
@@ -272,6 +282,67 @@ const DoctorDashboard = () => {
 
         </div>
       </div>
+
+      {/* High Risk Alerts Modal */}
+      {showAlertsModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm" onClick={() => setShowAlertsModal(false)}>
+          <div className="bg-white rounded-3xl shadow-2xl w-full max-w-lg overflow-hidden" onClick={(e) => e.stopPropagation()}>
+            {/* Modal Header */}
+            <div className="bg-rose-50 border-b border-rose-100 px-6 py-5 flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-2xl bg-rose-100 flex items-center justify-center">
+                  <AlertCircle className="h-5 w-5 text-rose-600" />
+                </div>
+                <div>
+                  <h3 className="font-black text-rose-800 text-lg">High Risk Patients</h3>
+                  <p className="text-xs font-semibold text-rose-500">SCORAD score above 50</p>
+                </div>
+              </div>
+              <button onClick={() => setShowAlertsModal(false)} className="w-8 h-8 rounded-full bg-rose-100 hover:bg-rose-200 flex items-center justify-center text-rose-600 transition font-bold text-lg leading-none">&times;</button>
+            </div>
+
+            {/* Patient List */}
+            <div className="p-4 max-h-[420px] overflow-y-auto space-y-3">
+              {alerts.length === 0 ? (
+                <div className="py-12 flex flex-col items-center text-slate-400">
+                  <Activity className="h-10 w-10 mb-3 opacity-40" />
+                  <p className="font-semibold text-sm">No high-risk patients at this time.</p>
+                </div>
+              ) : (
+                alerts.map((alert, idx) => (
+                  <div key={idx} className="flex items-center justify-between bg-white border border-slate-100 hover:border-rose-200 rounded-2xl p-4 transition group">
+                    <div className="flex items-center gap-4">
+                      {/* Avatar */}
+                      <div className="w-11 h-11 rounded-full bg-rose-100 flex items-center justify-center flex-shrink-0">
+                        <span className="text-rose-600 font-black text-base">{(alert.name || "?")[0].toUpperCase()}</span>
+                      </div>
+                      <div>
+                        <p className="font-bold text-slate-800">{alert.name}</p>
+                        <p className="text-xs font-semibold text-slate-400 mt-0.5">Reported on {alert.date}</p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      {/* SCORAD Badge */}
+                      <div className="text-center">
+                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">SCORAD</p>
+                        <p className="text-2xl font-black text-rose-600 leading-tight">{alert.score}</p>
+                        <span className="text-[10px] font-bold text-rose-500 bg-rose-50 border border-rose-100 px-2 py-0.5 rounded-full">Severe</span>
+                      </div>
+                      {/* View Button */}
+                      <button
+                        onClick={() => { setShowAlertsModal(false); navigate(`/doctor/patient/${alert.patientId}`); }}
+                        className="ml-2 flex items-center gap-1.5 bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold px-3 py-2 rounded-xl transition shadow-sm"
+                      >
+                        View <ChevronRight className="h-3.5 w-3.5" />
+                      </button>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </DoctorLayout>
   );
 };

@@ -333,12 +333,12 @@ export default function TrackProgress({ setActiveSection }) {
     }
   };
 
-  if (checkingSubmission) return <div className="min-h-screen bg-slate-50 p-6 flex items-center justify-center animate-pulse text-slate-500">Checking today's entry…</div>;
+  if (checkingSubmission) return <div className="min-h-screen bg-[#FDFBF7] p-6 flex items-center justify-center animate-pulse text-slate-500">Checking today's entry…</div>;
 
   /* ───────── SUBMITTED READ-ONLY VIEW ───────── */
   if (hasSubmittedToday && !isEditing) {
     return (
-      <div className="min-h-screen bg-[#FAFAF9] p-4 lg:p-8 text-slate-800 flex justify-center font-sans">
+      <div className="min-h-screen bg-[#FDFBF7] p-4 lg:p-8 text-slate-800 flex justify-center font-sans">
         <div className="max-w-6xl w-full space-y-6 animate-fade-in-up mt-6">
           
           {/* HERO SECTION */}
@@ -529,7 +529,7 @@ export default function TrackProgress({ setActiveSection }) {
 
   /* ───────── EDITABLE FORM VIEW ───────── */
   return (
-    <div className="min-h-screen bg-slate-50 p-6 text-slate-900 flex items-center justify-center">
+    <div className="min-h-screen bg-[#FDFBF7] p-6 text-slate-900 flex items-center justify-center">
       <div className="max-w-7xl w-full space-y-6 animate-fade-in-up">
         
         <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 flex items-center justify-between">

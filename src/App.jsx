@@ -7,6 +7,7 @@ const Signup   = lazy(() => import("./auth/signup.jsx"));
 
 // Main Pages
 const Home = lazy(() => import("./pages/home.jsx"));
+const EditProfile = lazy(() => import("./pages/EditProfile.jsx"));
 
 // Dashboards
 const PatientDashboard = lazy(() => import("./pages/dashboard/patientDashboard.jsx"));
@@ -22,7 +23,6 @@ const TrackProgress = lazy(() => import("./features/trackprogress.jsx"));
 const Appointments  = lazy(() => import("./components/doctor/Appointments.jsx"));
 const Patients      = lazy(() => import("./components/doctor/Patients.jsx"));
 const Reports       = lazy(() => import("./components/doctor/Reports.jsx"));
-const Settings      = lazy(() => import("./components/doctor/Settings.jsx"));
 const PatientHistory = lazy(() => import("./components/doctor/PatientHistory.jsx"));
 
 // Admin Pages
@@ -51,6 +51,7 @@ function App() {
           <Route path="/"element={<Home />} />
           <Route path="/login"element={<Login />} />
           <Route path="/signup"element={<Signup />} />
+          <Route path="/edit-profile" element={<EditProfile />} />
 
           {/* Patient Routes */}
           <Route path="/patient/dashboard" element={<PatientDashboard />} />
@@ -63,7 +64,6 @@ function App() {
           <Route path="/doctor/appointments"element={<Appointments />} />
           <Route path="/doctor/patients"element={<Patients />} />
           <Route path="/doctor/reports"element={<Reports />} />
-          <Route path="/doctor/settings"element={<Settings />} />
           <Route path="/doctor/patient/:patientId"element={<PatientHistory />} />
 
           {/* Admin Routes */}

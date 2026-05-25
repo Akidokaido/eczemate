@@ -28,7 +28,7 @@ const ActionItemsSection = ({ actionItems, toggleActionItem }) => {
           <p className="text-sm text-slate-400 font-bold">No active tasks</p>
         </div>
       ) : (
-        <div className="space-y-4">
+        <div className="space-y-4 max-h-[300px] overflow-y-auto pr-1 custom-scrollbar">
           {actionItems.map(item => (
             <div 
               key={item.id} 

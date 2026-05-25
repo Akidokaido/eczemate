@@ -1,12 +1,43 @@
-import React from "react";
-import { Heart, Shield, Droplets, Mail, MapPin, ExternalLink } from "lucide-react";
+import React, { useEffect, useState } from "react";
+import { Heart, Shield, Droplets, Mail, MapPin, ExternalLink, BookOpen, Activity, Bot, Calendar } from "lucide-react";
+import { useNavigate } from "react-router-dom";
+import { onAuthStateChanged } from "firebase/auth";
+import { auth } from "../../firebase/config";
+
+const QUICK_LINKS = [
+  { label: "Journal",        icon: BookOpen,  tab: "journal" },
+  { label: "Track Progress", icon: Activity,  tab: "track" },
+  { label: "AI Chat",        icon: Bot,       tab: "ai-chat" },
+  { label: "Book Appointment", icon: Calendar, tab: "appointment" },
+];
 
 const Footer = () => {
+  const navigate = useNavigate();
+  const [loggedIn, setLoggedIn] = useState(false);
+
+  useEffect(() => {
+    const unsub = onAuthStateChanged(auth, (user) => setLoggedIn(!!user));
+    return unsub;
+  }, []);
+
+  const handleQuickLink = (tab) => {
+    if (loggedIn) {
+      navigate("/patient/dashboard", { state: { activeTab: tab } });
+    } else {
+      if (window.location.pathname === "/") {
+        const el = document.getElementById("features");
+        if (el) el.scrollIntoView({ behavior: "smooth" });
+      } else {
+        navigate("/#features");
+      }
+    }
+  };
+
   return (
     <footer className="relative z-10 bg-white border-t border-slate-100 mt-auto">
       <div className="max-w-7xl mx-auto px-6 py-12 lg:py-16">
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-12 lg:gap-8">
-          
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-12 lg:gap-8">
+
           {/* Logo & Info */}
           <div className="md:col-span-1 space-y-6">
             <div className="flex items-center gap-2">
@@ -33,23 +64,17 @@ const Footer = () => {
 
           {/* Quick Links */}
           <div className="md:col-span-1">
-            <h4 className="text-sm font-bold text-[#1C1917] uppercase tracking-widest mb-6">Platform</h4>
+            <h4 className="text-sm font-bold text-[#1C1917] uppercase tracking-widest mb-6">Quick Links</h4>
             <ul className="space-y-4">
-              {["Dashboard", "Journal", "Track Progress", "AI Chat"].map((item) => (
-                <li key={item}>
-                  <a href="#" className="text-sm text-[#64748B] hover:text-[#0D9488] transition-colors">{item}</a>
-                </li>
-              ))}
-            </ul>
-          </div>
-
-          {/* Support */}
-          <div className="md:col-span-1">
-            <h4 className="text-sm font-bold text-[#1C1917] uppercase tracking-widest mb-6">Medical Support</h4>
-            <ul className="space-y-4">
-              {["Find a Doctor", "Consultation", "Eczema Guide", "Safety Info"].map((item) => (
-                <li key={item}>
-                  <a href="#" className="text-sm text-[#64748B] hover:text-[#0D9488] transition-colors">{item}</a>
+              {QUICK_LINKS.map(({ label, icon: Icon, tab }) => (
+                <li key={label}>
+                  <button
+                    onClick={() => handleQuickLink(tab)}
+                    className="flex items-center gap-2 text-sm text-[#64748B] hover:text-[#0D9488] transition-colors group"
+                  >
+                    <Icon className="h-3.5 w-3.5 text-[#0D9488]/50 group-hover:text-[#0D9488] transition-colors" />
+                    {label}
+                  </button>
                 </li>
               ))}
             </ul>
@@ -68,8 +93,8 @@ const Footer = () => {
                 <span className="text-sm text-[#64748B]">Kuala Lumpur, Malaysia</span>
               </li>
             </ul>
-            
-            {/* Prominent Medical Disclaimer */}
+
+            {/* Medical Disclaimer */}
             <div className="mt-8 p-4 bg-orange-50 border border-orange-100 rounded-2xl relative overflow-hidden group">
               <div className="absolute top-0 right-0 w-16 h-16 bg-[#F97316]/10 rounded-full blur-xl pointer-events-none" />
               <p className="text-[10px] font-bold text-[#F97316] uppercase tracking-wider mb-1.5 flex items-center gap-1.5">
@@ -80,6 +105,7 @@ const Footer = () => {
               </p>
             </div>
           </div>
+
         </div>
 
         <div className="mt-12 pt-8 border-t border-slate-100 flex flex-col md:flex-row justify-between items-center gap-6">
