@@ -52,8 +52,8 @@ export const findUserByUid = async (uid) => {
           return { data: snap.data(), role };
         }
       } catch (err) {
-        // Permission denied for this subcollection — skip it
-        console.warn(`Could not check ${role} subcollection:`, err.message);
+        // Log full error so permission denials are visible in console
+        console.warn(`Could not check ${role} subcollection:`, err.code, err.message);
       }
       return null;
     })

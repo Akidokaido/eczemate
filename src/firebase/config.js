@@ -43,10 +43,7 @@ const auth = getAuth(app); // Initialize Firebase Authentication
 const firestore = getFirestore(app); // Initialize Firestore
 const db = firestore; // Alias for Firestore
 
-// Use localStorage persistence to avoid slow IndexedDB init on Vercel
-setPersistence(auth, browserLocalPersistence).catch((err) =>
-  console.warn("Auth persistence error:", err)
-);
+
 
 // Export the necessary functions and services
 export { 

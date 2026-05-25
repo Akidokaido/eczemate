@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { auth, signInWithEmailAndPassword } from "../firebase/config";
+import { auth, signInWithEmailAndPassword, onAuthStateChanged, browserLocalPersistence, setPersistence } from "../firebase/config";
 import { signOut } from "firebase/auth";
 import { findUserByUid } from "../firebase/userPaths";
 import { Mail, Lock, LogIn } from "lucide-react";
@@ -17,7 +17,19 @@ const Login = () => {
     setLoading(true);
     setError(null);
     try {
+      // Set persistence first (must complete before sign-in)
+      await setPersistence(auth, browserLocalPersistence);
+
       const cred = await signInWithEmailAndPassword(auth, email, password);
+
+      // Wait for the auth token to fully propagate before hitting Firestore.
+      // Without this, Firestore reads immediately after signIn can be denied
+      // silently on Vercel because the auth token hasn't settled yet.
+      await new Promise((resolve) => {
+        const unsub = onAuthStateChanged(auth, (user) => {
+          if (user) { unsub(); resolve(); }
+        });
+      });
 
       // Search all role subcollections to find the user
       const result = await findUserByUid(cred.user.uid);
