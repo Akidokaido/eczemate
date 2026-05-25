@@ -39,22 +39,28 @@ export const getUserCollectionRef = (role) => {
 /**
  * Find a user across all role subcollections by UID.
  * Returns { data, role } or null if not found.
+ * Runs all role lookups in parallel for faster login.
  * Gracefully handles permission errors for individual subcollections.
  */
 export const findUserByUid = async (uid) => {
-  for (const role of ALL_ROLES) {
-    try {
-      const ref = getUserDocRef(role, uid);
-      const snap = await getDoc(ref);
-      if (snap.exists()) {
-        return { data: snap.data(), role };
+  const results = await Promise.all(
+    ALL_ROLES.map(async (role) => {
+      try {
+        const ref = getUserDocRef(role, uid);
+        const snap = await getDoc(ref);
+        if (snap.exists()) {
+          return { data: snap.data(), role };
+        }
+      } catch (err) {
+        // Permission denied for this subcollection — skip it
+        console.warn(`Could not check ${role} subcollection:`, err.message);
       }
-    } catch (err) {
-      // Permission denied for this subcollection — skip it
-      console.warn(`Could not check ${role} subcollection:`, err.message);
-    }
-  }
-  return null;
+      return null;
+    })
+  );
+
+  // Return the first non-null result
+  return results.find((r) => r !== null) ?? null;
 };
 
 export { ROLE_COLLECTIONS, ALL_ROLES };
