@@ -4,7 +4,9 @@ import { getAuth,
   createUserWithEmailAndPassword, 
   signInWithEmailAndPassword,
   signOut,
-  onAuthStateChanged
+  onAuthStateChanged,
+  browserLocalPersistence,
+  setPersistence
 } from "firebase/auth"; // Correct modular imports
 
 import { 
@@ -37,10 +39,14 @@ const firebaseConfig = {
 
 // Initialize Firebase
 const app = initializeApp(firebaseConfig);
-const auth = getAuth(app); // Initialize Firebasse Authentication
-const firestore = getFirestore(app); // Initialize Firestore (Renamed to `db` for consistency with your imports)
-const db = firestore; // Alias for Firestore to match your imports
- 
+const auth = getAuth(app); // Initialize Firebase Authentication
+const firestore = getFirestore(app); // Initialize Firestore
+const db = firestore; // Alias for Firestore
+
+// Use localStorage persistence to avoid slow IndexedDB init on Vercel
+setPersistence(auth, browserLocalPersistence).catch((err) =>
+  console.warn("Auth persistence error:", err)
+);
 
 // Export the necessary functions and services
 export { 
@@ -53,6 +59,8 @@ export {
   collection, 
   signOut,
   onAuthStateChanged,
+  browserLocalPersistence,
+  setPersistence,
   doc, 
   setDoc, 
   getDoc, 
@@ -66,6 +74,4 @@ export {
   onSnapshot,
   serverTimestamp,
   Timestamp
-
-
 };
