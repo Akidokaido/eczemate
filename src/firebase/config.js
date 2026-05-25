@@ -7,10 +7,10 @@ import { getAuth,
   onAuthStateChanged,
   browserLocalPersistence,
   setPersistence
-} from "firebase/auth"; // Correct modular imports
+} from "firebase/auth";
 
 import { 
-  getFirestore, 
+  initializeFirestore,
   collection, 
   doc, 
   setDoc, 
@@ -25,7 +25,7 @@ import {
   onSnapshot,
   serverTimestamp,
   Timestamp
-} from "firebase/firestore"; // Modular Firestore functions
+} from "firebase/firestore";
 
 const firebaseConfig = {
   apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
@@ -39,11 +39,14 @@ const firebaseConfig = {
 
 // Initialize Firebase
 const app = initializeApp(firebaseConfig);
-const auth = getAuth(app); // Initialize Firebase Authentication
-const firestore = getFirestore(app); // Initialize Firestore
-const db = firestore; // Alias for Firestore
+const auth = getAuth(app);
 
-
+// Initialize Firestore with long polling — Vercel blocks WebSockets,
+// which causes "client is offline" errors with the default getFirestore().
+const firestore = initializeFirestore(app, {
+  experimentalForceLongPolling: true,
+});
+const db = firestore;
 
 // Export the necessary functions and services
 export { 
