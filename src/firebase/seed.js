@@ -265,3 +265,59 @@ export async function seedDatabase(setStatus) {
     console.error(error);
   }
 }
+
+export async function seedJamal(setStatus) {
+  const log = (msg) => {
+    console.log(msg);
+    if (setStatus) setStatus((prev) => prev + "\n" + msg);
+  };
+
+  try {
+    log("Signing in as jamal123@gmail.com...");
+    const cred = await signInWithEmailAndPassword(auth, "jamal123@gmail.com", "Password123");
+    const uid = cred.user.uid;
+    log(`Signed in successfully! UID: ${uid}`);
+
+    log("Generating 60 days of SCORAD scores and Journal entries...");
+    for (let i = 60; i >= 0; i--) {
+      const dateObj = new Date();
+      dateObj.setDate(dateObj.getDate() - i);
+      const firebaseTimestamp = Timestamp.fromDate(dateObj);
+      
+      const baseScore = 65 - ((60 - i) * 0.6);
+      const score = Math.max(0, Math.min(103, Math.round(baseScore + (Math.random() * 10 - 5))));
+      
+      await addDoc(collection(firestore, "users", "patients", "accounts", uid, "trackProgress"), {
+        scoradScore: score,
+        symptoms: {
+          redness: Math.floor(score / 3),
+          swelling: Math.floor(score / 4),
+          oozing: Math.floor(score / 5),
+          scratching: Math.floor(score / 3),
+          sleepLoss: Math.floor(score / 4),
+          dryness: Math.floor(score / 3)
+        },
+        timestamp: firebaseTimestamp
+      });
+
+      const emotions = ["Happy", "Anxious", "Stressed", "Calm", "Frustrated"];
+      const triggers = ["Stress", "Heat", "Dust", "Dairy", "None"];
+      
+      await addDoc(collection(firestore, "users", "patients", "accounts", uid, "journal"), {
+        date: firebaseTimestamp,
+        createdAt: firebaseTimestamp,
+        fullDate: dateObj.toISOString(),
+        score,
+        emotion: emotions[Math.floor(Math.random() * emotions.length)],
+        sleepHours: Math.floor(Math.random() * 4) + 5,
+        sleepQuality: Math.random() > 0.5 ? "Good" : "Poor",
+        entry: score > 50 ? "Having a tough time with flare-ups today. The skin is very itchy." : "Skin feels relatively calm today. Keeping up with the moisturizing routine.",
+        foodLog: [triggers[Math.floor(Math.random() * triggers.length)]].join(', ')
+      });
+    }
+
+    log("✅ Successfully seeded 60 days of data for Jamal!");
+  } catch (error) {
+    log(`❌ Error: ${error.message}`);
+  }
+}

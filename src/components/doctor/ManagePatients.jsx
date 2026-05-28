@@ -4,12 +4,13 @@ import { auth } from "../../firebase/config";
 import { signOut } from "firebase/auth";
 import { getDocs, deleteDoc } from "firebase/firestore";
 import { getUserCollectionRef, getUserDocRef } from "../../firebase/userPaths";
-import { User, Trash2, ArrowLeft, LogOut } from "lucide-react";
+import { User, Trash2, ArrowLeft, LogOut, Search } from "lucide-react";
 
 const ManagePatients = () => {
   const navigate = useNavigate();
   const [patients, setPatients] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [searchQuery, setSearchQuery] = useState("");
 
   const fetchPatients = async () => {
     const snap = await getDocs(getUserCollectionRef("patient"));
@@ -25,21 +26,27 @@ const ManagePatients = () => {
 
   useEffect(() => { fetchPatients(); }, []);
 
+  const filteredPatients = patients.filter(p => 
+    (p.name || "").toLowerCase().includes(searchQuery.toLowerCase()) || 
+    (p.email || "").toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
   return (
-    <div className="min-h-screen" style={{ background: "var(--bg-primary)" }}>
-      <div className="bg-mesh" />
-      <div className="relative z-10 max-w-7xl mx-auto p-8 animate-fade-in-up">
-        <div className="flex items-center justify-between mb-6">
-          <button onClick={() => navigate("/admin/dashboard")} className="btn-ghost text-sm py-2 px-4 flex items-center gap-2">
-            <ArrowLeft className="h-4 w-4" /> Back to Dashboard
-          </button>
-          <button onClick={async () => { await signOut(auth); navigate("/login"); }} className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium text-red-500 hover:bg-red-50 transition">
-            <LogOut className="h-4 w-4" /> Logout
-          </button>
+    <div className="p-8 max-w-7xl mx-auto animate-fade-in-up">
+      <div className="glass-strong p-6 space-y-4">
+        <div className="relative mb-6">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+          <input
+            type="text"
+            placeholder="Search patients by name or email..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="w-full bg-white border border-slate-200 rounded-xl pl-10 pr-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-sky-100"
+          />
         </div>
-        <h2 className="text-2xl font-bold mb-6" style={{ color: "var(--text-primary)" }}>Manage Patients</h2>
-        <div className="glass-strong p-6 space-y-3">
-          {loading ? <p style={{ color: "var(--text-secondary)" }}>Loading...</p> : patients.length === 0 ? <p style={{ color: "var(--text-secondary)" }}>No patients found.</p> : patients.map((p) => (
+
+        <div className="space-y-3 max-h-[600px] overflow-y-auto custom-scrollbar pr-2">
+          {loading ? <p style={{ color: "var(--text-secondary)" }}>Loading...</p> : filteredPatients.length === 0 ? <p style={{ color: "var(--text-secondary)" }}>No patients found.</p> : filteredPatients.map((p) => (
             <div key={p.id} className="glow-card p-4 flex justify-between items-center">
               <div className="flex items-center gap-3">
                 <div className="w-8 h-8 rounded-lg flex items-center justify-center bg-sky-50">

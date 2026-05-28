@@ -120,7 +120,7 @@ const DoctorDashboard = () => {
   const filteredSchedule = allAppointments
     .filter(appt => {
       const apptDateStr = appt.date?.toDate ? appt.date.toDate().toISOString().split("T")[0] : new Date(appt.date).toISOString().split("T")[0];
-      return apptDateStr === scheduleDate;
+      return apptDateStr === scheduleDate && appt.status === "approved";
     })
     .sort((a, b) => {
       const timeA = a.timeSlot ? new Date(`1970/01/01 ${a.timeSlot}`).getTime() : 0;
@@ -204,7 +204,7 @@ const DoctorDashboard = () => {
                         <p className="text-xs mt-1">Patients need to complete at least one SCORAD assessment.</p>
                       </div>
                    ) : (
-                      <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={0}>
+                      <ResponsiveContainer width="99%" height={250}>
                         <PieChart>
                           <Pie
                             data={severityData}
@@ -267,12 +267,17 @@ const DoctorDashboard = () => {
                          <div className="bg-slate-50 border border-slate-100 p-4 rounded-xl hover:border-[#0D9488]/30 transition group cursor-pointer" onClick={() => navigate(`/doctor/patient/${appt.patientId}`)}>
                             <div className="flex justify-between items-start mb-2">
                                <p className="text-xs font-black text-[#0D9488] bg-[#0D9488]/10 px-2 py-0.5 rounded uppercase tracking-wide">{appt.timeSlot || "Time TBD"}</p>
-                               <span className={`text-[10px] font-bold px-2 py-0.5 rounded-md uppercase tracking-wider ${appt.status === 'approved' ? 'bg-emerald-100 text-emerald-700' : appt.status === 'completed' ? 'bg-sky-100 text-sky-700' : 'bg-amber-100 text-amber-700'}`}>
-                                  {appt.status}
-                               </span>
                             </div>
                             <p className="font-bold text-slate-800 text-sm">{appt.patientName || "Patient"}</p>
-                            <p className="text-xs font-semibold text-slate-500 mt-1 line-clamp-1">{appt.reason}</p>
+                            <div className="flex justify-between items-end mt-1">
+                               <p className="text-xs font-semibold text-slate-500 line-clamp-1 flex-1 pr-2">{appt.reason}</p>
+                               <button 
+                                 onClick={(e) => { e.stopPropagation(); navigate(`/doctor/patient/${appt.patientId}`); }}
+                                 className="text-[10px] font-bold px-3 py-1 rounded-md uppercase tracking-wider bg-[#0D9488] text-white hover:bg-[#0D9488]/90 transition shadow-sm flex items-center gap-1 flex-shrink-0"
+                               >
+                                 View <ChevronRight className="h-3 w-3" />
+                               </button>
+                            </div>
                          </div>
                       </div>
                    ))

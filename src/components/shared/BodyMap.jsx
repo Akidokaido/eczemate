@@ -61,33 +61,6 @@ export default function BodyMap({ selectedParts, onTogglePart, readOnly = false 
         )}
       </div>
 
-      {/* Selected Parts List */}
-      {!readOnly && (
-        <div className="mt-8 w-full">
-          <h3 className="text-sm font-semibold text-slate-600 mb-2">Selected Areas:</h3>
-          {selectedParts.length > 0 ? (
-            <div className="flex flex-wrap gap-2">
-              {selectedParts.map((part) => (
-                <span
-                  key={part}
-                  className="bg-sky-50 text-sky-600 text-xs px-2 py-1 rounded-full border border-sky-200 flex items-center gap-1"
-                >
-                  {formatName(part)}
-                  <button
-                    onClick={() => onTogglePart(part)}
-                    className="hover:text-red-500 ml-1"
-                    title="Remove"
-                  >
-                    &times;
-                  </button>
-                </span>
-              ))}
-            </div>
-          ) : (
-            <p className="text-xs text-slate-400 italic">No areas selected.</p>
-          )}
-        </div>
-      )}
     </div>
   );
 }

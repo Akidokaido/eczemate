@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import DoctorLayout from "../DoctorLayout";
 import { auth, firestore, onAuthStateChanged, collection, query, where, getDocs, doc, updateDoc } from "../../firebase/config";
 import { Search, ChevronDown, CheckCircle } from "lucide-react";
+import StatusBadge from "../shared/StatusBadge";
 
 const Appointments = () => {
   const [appointments, setAppointments] = useState([]);
@@ -117,9 +118,9 @@ const Appointments = () => {
                     {appt.timeSlot && <span className="ml-2 font-semibold text-indigo-500">• {appt.timeSlot}</span>}
                   </p>
                   <p className="text-sm" style={{ color: "var(--text-muted)" }}>{appt.reason || "—"}</p>
-                  <span className={`badge mt-2 ${appt.status === "approved" ? "badge-approved" : appt.status === "rejected" ? "badge-rejected" : appt.status === "cancelled" ? "badge-cancelled" : "badge-pending"}`}>
-                    {appt.status?.charAt(0).toUpperCase() + appt.status?.slice(1)}
-                  </span>
+                  <div className="mt-2 inline-block">
+                    <StatusBadge status={appt.status} />
+                  </div>
                 </div>
                 {appt.status === "pending" && (
                   <div className="flex gap-2">

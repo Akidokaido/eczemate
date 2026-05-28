@@ -1,5 +1,6 @@
 import React, { Suspense, lazy } from "react";
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+import ErrorBoundary from "./components/shared/ErrorBoundary";
 
 // Auth
 const Login    = lazy(() => import("./auth/login.jsx"));
@@ -44,8 +45,9 @@ const PageLoader = () => (
 function App() {
   return (
     <Router>
-      <Suspense fallback={<PageLoader />}>
-        <Routes>
+      <ErrorBoundary>
+        <Suspense fallback={<PageLoader />}>
+          <Routes>
 
           {/* Public Routes */}
           <Route path="/"element={<Home />} />
@@ -75,8 +77,9 @@ function App() {
           {/* Seed (temporary) */}
           <Route path="/seed" element={<SeedPage />} />
 
-        </Routes>
-      </Suspense>
+          </Routes>
+        </Suspense>
+      </ErrorBoundary>
     </Router>
   );
 }

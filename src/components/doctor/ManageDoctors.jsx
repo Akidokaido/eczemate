@@ -4,7 +4,7 @@ import { auth } from "../../firebase/config";
 import { signOut } from "firebase/auth";
 import { getDocs, deleteDoc, updateDoc } from "firebase/firestore";
 import { getUserCollectionRef, getUserDocRef } from "../../firebase/userPaths";
-import { UserCog, Trash2, ArrowLeft, LogOut, CheckCircle, XCircle, Clock, ShieldCheck, ShieldX } from "lucide-react";
+import { UserCog, Trash2, ArrowLeft, LogOut, CheckCircle, XCircle, Clock, ShieldCheck, ShieldX, Search } from "lucide-react";
 
 const TABS = [
   { key: "pending", label: "Pending", icon: Clock, color: "#f59e0b" },
@@ -17,6 +17,7 @@ const ManageDoctors = () => {
   const [doctors, setDoctors] = useState([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState("pending");
+  const [searchQuery, setSearchQuery] = useState("");
 
   const fetchDoctors = async () => {
     setLoading(true);
@@ -38,7 +39,11 @@ const ManageDoctors = () => {
 
   useEffect(() => { fetchDoctors(); }, []);
 
-  const filtered = doctors.filter((d) => (d.status || "pending") === activeTab);
+  const filtered = doctors.filter((d) => 
+    (d.status || "pending") === activeTab &&
+    ((d.name || "").toLowerCase().includes(searchQuery.toLowerCase()) || 
+     (d.email || "").toLowerCase().includes(searchQuery.toLowerCase()))
+  );
   const counts = {
     pending: doctors.filter((d) => (d.status || "pending") === "pending").length,
     approved: doctors.filter((d) => d.status === "approved").length,
@@ -58,23 +63,11 @@ const ManageDoctors = () => {
   };
 
   return (
-    <div className="min-h-screen" style={{ background: "var(--bg-primary)" }}>
-      <div className="bg-mesh" />
-      <div className="relative z-10 max-w-7xl mx-auto p-8 animate-fade-in-up">
-        {/* Header */}
-        <div className="flex items-center justify-between mb-6">
-          <button onClick={() => navigate("/admin/dashboard")} className="btn-ghost text-sm py-2 px-4 flex items-center gap-2">
-            <ArrowLeft className="h-4 w-4" /> Back to Dashboard
-          </button>
-          <button onClick={async () => { await signOut(auth); navigate("/login"); }} className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium text-red-500 hover:bg-red-50 transition">
-            <LogOut className="h-4 w-4" /> Logout
-          </button>
-        </div>
-
-        <h2 className="text-2xl font-bold mb-6" style={{ color: "var(--text-primary)" }}>Manage Doctors</h2>
-
-        {/* Tabs */}
-        <div className="flex gap-2 mb-6">
+    <div className="p-8 max-w-7xl mx-auto animate-fade-in-up">
+        
+        <div className="flex flex-col sm:flex-row gap-4 mb-6">
+          {/* Tabs */}
+          <div className="flex gap-2">
           {TABS.map(({ key, label, icon: Icon, color }) => (
             <button
               key={key}
@@ -104,8 +97,21 @@ const ManageDoctors = () => {
           ))}
         </div>
 
+        {/* Search */}
+        <div className="relative flex-1">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+          <input
+            type="text"
+            placeholder="Search doctors by name or email..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="w-full bg-white border border-slate-200 rounded-xl pl-10 pr-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-sky-100"
+          />
+        </div>
+      </div>
+
         {/* Doctor List */}
-        <div className="glass-strong p-6 space-y-3">
+        <div className="glass-strong p-6 space-y-3 max-h-[600px] overflow-y-auto custom-scrollbar">
           {loading ? (
             <p style={{ color: "var(--text-secondary)" }}>Loading...</p>
           ) : filtered.length === 0 ? (
@@ -164,7 +170,6 @@ const ManageDoctors = () => {
             ))
           )}
         </div>
-      </div>
     </div>
   );
 };

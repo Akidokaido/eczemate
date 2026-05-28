@@ -3,6 +3,7 @@ import { Heart, Shield, Droplets, Mail, MapPin, ExternalLink, BookOpen, Activity
 import { useNavigate } from "react-router-dom";
 import { onAuthStateChanged } from "firebase/auth";
 import { auth } from "../../firebase/config";
+import { findUserByUid } from "../../firebase/userPaths";
 
 const QUICK_LINKS = [
   { label: "Journal",        icon: BookOpen,  tab: "journal" },
@@ -14,15 +15,30 @@ const QUICK_LINKS = [
 const Footer = () => {
   const navigate = useNavigate();
   const [loggedIn, setLoggedIn] = useState(false);
+  const [role, setRole] = useState(null);
 
   useEffect(() => {
-    const unsub = onAuthStateChanged(auth, (user) => setLoggedIn(!!user));
+    const unsub = onAuthStateChanged(auth, async (user) => {
+      setLoggedIn(!!user);
+      if (user) {
+        const result = await findUserByUid(user.uid);
+        if (result) setRole(result.role);
+      } else {
+        setRole(null);
+      }
+    });
     return unsub;
   }, []);
 
   const handleQuickLink = (tab) => {
     if (loggedIn) {
-      navigate("/patient/dashboard", { state: { activeTab: tab } });
+      if (role === "admin") {
+        navigate("/admin/dashboard");
+      } else if (role === "doctor") {
+        navigate("/doctor/dashboard");
+      } else {
+        navigate("/patient/dashboard", { state: { activeTab: tab } });
+      }
     } else {
       if (window.location.pathname === "/") {
         const el = document.getElementById("features");

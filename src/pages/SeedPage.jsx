@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { seedDatabase } from "../firebase/seed";
+import { seedDatabase, seedJamal } from "../firebase/seed";
 
 const SeedPage = () => {
   const [status, setStatus] = useState("Ready to seed. Click the button below.");
@@ -12,6 +12,13 @@ const SeedPage = () => {
     setSeeding(false);
   };
 
+  const handleSeedJamal = async () => {
+    setSeeding(true);
+    setStatus("Seeding Jamal's 2-month data started...");
+    await seedJamal(setStatus);
+    setSeeding(false);
+  };
+
   return (
     <div className="min-h-screen bg-gray-50 flex items-center justify-center p-8">
       <div className="bg-white rounded-2xl shadow-lg p-8 max-w-2xl w-full space-y-6">
@@ -20,17 +27,31 @@ const SeedPage = () => {
           This will create test users and populate Firestore with sample data.
         </p>
 
-        <button
-          onClick={handleSeed}
-          disabled={seeding}
-          className={`px-6 py-3 rounded-xl font-semibold text-white shadow-md transition ${
-            seeding
-              ? "bg-gray-400 cursor-not-allowed"
-              : "bg-blue-500 hover:bg-blue-600"
-          }`}
-        >
-          {seeding ? "Seeding..." : "Seed Database"}
-        </button>
+        <div className="flex gap-4">
+          <button
+            onClick={handleSeed}
+            disabled={seeding}
+            className={`flex-1 px-6 py-3 rounded-xl font-semibold text-white shadow-md transition ${
+              seeding
+                ? "bg-gray-400 cursor-not-allowed"
+                : "bg-blue-500 hover:bg-blue-600"
+            }`}
+          >
+            {seeding ? "Seeding..." : "Seed Database"}
+          </button>
+
+          <button
+            onClick={handleSeedJamal}
+            disabled={seeding}
+            className={`flex-1 px-6 py-3 rounded-xl font-semibold text-white shadow-md transition ${
+              seeding
+                ? "bg-gray-400 cursor-not-allowed"
+                : "bg-teal-500 hover:bg-teal-600"
+            }`}
+          >
+            {seeding ? "Working..." : "Populate Jamal (2 Months)"}
+          </button>
+        </div>
 
         <pre className="bg-gray-900 text-green-400 p-4 rounded-xl text-sm whitespace-pre-wrap max-h-96 overflow-y-auto">
           {status}

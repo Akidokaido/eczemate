@@ -3,6 +3,7 @@ import { firestore, collection, getDocs, doc, updateDoc, query, where } from "..
 import { getUserCollectionRef } from "../../firebase/userPaths";
 import { Search, CalendarX2, User, Stethoscope, ChevronLeft, Calendar } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import StatusBadge from "../shared/StatusBadge";
 
 const ManageAppointments = () => {
   const [doctors, setDoctors] = useState([]);
@@ -10,6 +11,7 @@ const ManageAppointments = () => {
   const [appointments, setAppointments] = useState([]);
   const [loading, setLoading] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
+  const [statusFilter, setStatusFilter] = useState("all");
   
   // Cancel Modal State
   const [isCancelModalOpen, setIsCancelModalOpen] = useState(false);
@@ -78,6 +80,19 @@ const ManageAppointments = () => {
     fetchAppointments();
   }, [selectedDoctorId]);
 
+  const handleApprove = async (appt) => {
+    try {
+      const apptRef = doc(firestore, "users", "patients", "accounts", appt.patientDocId, "appointments", appt.id);
+      await updateDoc(apptRef, { status: "approved" });
+      setAppointments(prev => prev.map(a => 
+        a.id === appt.id ? { ...a, status: "approved" } : a
+      ));
+    } catch (err) {
+      console.error("Error approving appointment:", err);
+      alert("Failed to approve appointment.");
+    }
+  };
+
   const handleCancelClick = (appt) => {
     setSelectedAppt(appt);
     setCancelReason("");
@@ -112,33 +127,23 @@ const ManageAppointments = () => {
 
   const filteredAppointments = appointments.filter(a => {
     const q = searchQuery.toLowerCase();
-    return (
+    const matchesSearch = (
       (a.patientName || "").toLowerCase().includes(q) ||
       (a.patientEmail || "").toLowerCase().includes(q) ||
       (a.reason || "").toLowerCase().includes(q)
     );
+    const matchesStatus = statusFilter === "all" || (a.status || "pending") === statusFilter;
+    return matchesSearch && matchesStatus;
   });
 
   return (
-    <div className="flex min-h-screen" style={{ background: "var(--bg-primary)" }}>
-      <div className="bg-mesh" />
-
-      <div className="relative z-10 flex-1 flex flex-col max-w-7xl mx-auto w-full">
-        <header className="glass-strong flex items-center justify-between px-8 py-4 m-6 rounded-2xl">
-          <div className="flex items-center gap-4">
-            <button onClick={() => navigate(-1)} className="p-2 hover:bg-slate-100 rounded-full transition">
-              <ChevronLeft className="h-5 w-5" />
-            </button>
-            <h2 className="text-xl font-bold" style={{ color: "var(--text-primary)" }}>Manage Appointments</h2>
-          </div>
-        </header>
-
-        <main className="px-8 pb-8 flex-1 animate-fade-in-up">
+    <div className="p-8 max-w-7xl mx-auto animate-fade-in-up">
+      <main className="pb-8 flex-1 animate-fade-in-up">
           
-          {/* Controls: Dropdown and Search */}
-          <div className="glass p-6 mb-6 flex flex-col md:flex-row gap-4 justify-between items-center">
+          {/* Controls: Dropdown, Search, Status */}
+          <div className="glass p-6 mb-6 grid grid-cols-1 md:grid-cols-3 gap-4 items-center">
             
-            <div className="flex items-center gap-3 w-full md:w-1/2">
+            <div className="flex items-center gap-3 w-full">
               <div className="w-10 h-10 rounded-xl flex items-center justify-center bg-sky-50 flex-shrink-0">
                 <Stethoscope className="h-5 w-5 text-sky-500" />
               </div>
@@ -156,21 +161,34 @@ const ManageAppointments = () => {
               </div>
             </div>
 
-            <div className="w-full md:w-1/3 relative">
+            <div className="w-full relative">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
               <input 
                 type="text" 
                 placeholder="Search patient or reason..." 
-                className="input-dark pl-10"
+                className="input-dark w-full pl-10"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
               />
             </div>
             
+            <div className="w-full relative">
+               <select 
+                  className="input-dark w-full appearance-none cursor-pointer"
+                  value={statusFilter}
+                  onChange={(e) => setStatusFilter(e.target.value)}
+                >
+                  <option value="all">All Statuses</option>
+                  <option value="pending">Pending</option>
+                  <option value="approved">Approved</option>
+                  <option value="rejected">Rejected</option>
+                  <option value="cancelled">Cancelled</option>
+                </select>
+            </div>
           </div>
 
           {/* Table */}
-          <div className="glass overflow-hidden">
+          <div className="glass overflow-y-auto max-h-[600px] custom-scrollbar">
             <table className="w-full text-left border-collapse">
               <thead>
                 <tr style={{ background: "rgba(0,0,0,0.02)", borderBottom: "1px solid var(--border-subtle)" }}>
@@ -223,9 +241,7 @@ const ManageAppointments = () => {
                         {appt.reason || "—"}
                       </td>
                       <td className="p-4">
-                        <span className={`badge ${appt.status === "approved" ? "badge-approved" : appt.status === "rejected" ? "badge-rejected" : appt.status === "cancelled" ? "badge-cancelled" : "badge-pending"}`}>
-                          {appt.status?.charAt(0).toUpperCase() + appt.status?.slice(1)}
-                        </span>
+                        <StatusBadge status={appt.status} />
                         {appt.cancelReason && (
                           <p className="text-[10px] text-red-500 mt-1 max-w-[120px] truncate" title={appt.cancelReason}>
                             Reason: {appt.cancelReason}
@@ -233,14 +249,24 @@ const ManageAppointments = () => {
                         )}
                       </td>
                       <td className="p-4 text-right">
-                        {appt.status !== "cancelled" && appt.status !== "rejected" && (
-                          <button 
-                            onClick={() => handleCancelClick(appt)}
-                            className="text-xs font-semibold text-red-500 hover:text-red-700 bg-red-50 px-3 py-1.5 rounded-lg transition"
-                          >
-                            Cancel
-                          </button>
-                        )}
+                        <div className="flex items-center justify-end gap-2">
+                          {appt.status === "pending" && (
+                            <button 
+                              onClick={() => handleApprove(appt)}
+                              className="text-xs font-semibold text-teal-600 hover:text-teal-700 bg-teal-50 px-3 py-1.5 rounded-lg transition"
+                            >
+                              Approve
+                            </button>
+                          )}
+                          {appt.status !== "cancelled" && appt.status !== "rejected" && (
+                            <button 
+                              onClick={() => handleCancelClick(appt)}
+                              className="text-xs font-semibold text-red-500 hover:text-red-700 bg-red-50 px-3 py-1.5 rounded-lg transition"
+                            >
+                              Cancel
+                            </button>
+                          )}
+                        </div>
                       </td>
                     </tr>
                   ))
@@ -250,7 +276,6 @@ const ManageAppointments = () => {
           </div>
 
         </main>
-      </div>
 
       {/* Cancel Modal */}
       {isCancelModalOpen && (
