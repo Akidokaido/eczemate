@@ -350,6 +350,18 @@ export default function TrackProgress({ setActiveSection }) {
              {/* Background glow */}
              <div className="absolute -top-20 -right-20 w-64 h-64 bg-white/10 blur-3xl rounded-full pointer-events-none" />
              
+             {/* Top Right Info Tooltip */}
+             <div className="absolute top-4 right-4 group cursor-help z-20">
+               <div className="w-8 h-8 rounded-full bg-white/20 hover:bg-white/30 backdrop-blur-md flex items-center justify-center transition-colors">
+                 <HelpCircle size={18} className="text-white" />
+               </div>
+               {/* Tooltip */}
+               <div className="absolute top-full right-0 mt-2 w-72 bg-slate-800 text-white text-xs p-3 rounded-xl shadow-xl opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-50 font-medium">
+                 SCORAD (SCORing Atopic Dermatitis) is a clinical formula that calculates eczema severity based on affected body area (20%), intensity of redness/swelling (60%), and subjective symptoms like itchiness and sleep loss (20%).
+                 <div className="absolute bottom-full right-3 border-4 border-transparent border-b-slate-800"></div>
+               </div>
+             </div>
+             
              <div className="relative z-10 text-center lg:text-left flex flex-col items-center lg:items-start">
                 <p className="text-white/80 font-medium mb-1.5">{new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}</p>
                 <h1 className="text-3xl sm:text-4xl font-bold tracking-tight">Good morning, {getAuth().currentUser?.displayName?.split(' ')[0] || "Patient"}</h1>
@@ -394,7 +406,7 @@ export default function TrackProgress({ setActiveSection }) {
                    <Sparkles size={24} />
                 </div>
                 <div>
-                   <h3 className="text-xs font-black text-slate-400 uppercase tracking-widest mb-1.5">AI Wellness Insight</h3>
+                   <h3 className="text-xs font-black text-slate-400 uppercase tracking-widest mb-1.5">System Insights</h3>
                    <p className="text-slate-700 text-sm leading-relaxed font-medium">{getAiInsight(scoradScore, skin, itch, sleep)}</p>
                 </div>
              </div>

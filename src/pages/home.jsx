@@ -54,10 +54,6 @@ const Home = () => {
           <div className="absolute top-40 right-1/4 w-[400px] h-[400px] bg-[#F97316]/5 blur-3xl rounded-full mix-blend-multiply opacity-60 pointer-events-none" />
 
           <div className="space-y-8 animate-fade-in-up relative z-10 max-w-4xl">
-            <div className="inline-flex items-center gap-2 rounded-full bg-white px-4 py-2 text-sm font-bold text-[#0D9488] shadow-sm border border-[#0D9488]/10 animate-pulse">
-              <Sparkles size={16} className="text-[#F97316]" /> Introducing AI Wellness Insights
-            </div>
-            
             <h1 className="text-5xl sm:text-6xl lg:text-[5rem] font-extrabold tracking-tight text-[#1C1917] leading-[1.05]">
               Healing begins with <span className="text-[#0D9488]">understanding.</span>
             </h1>

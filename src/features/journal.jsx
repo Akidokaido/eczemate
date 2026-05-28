@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { BookOpen, Printer, Sparkles } from "lucide-react";
-import { auth, firestore, onAuthStateChanged, collection, addDoc, query, getDocs, orderBy, serverTimestamp, doc, updateDoc, where } from "../firebase/config";
+import { auth, firestore, onAuthStateChanged, collection, addDoc, query, getDocs, orderBy, serverTimestamp, doc, updateDoc, deleteDoc, where } from "../firebase/config";
 
 // Sub-components
 import ScoradTrendChart from "./journal/components/ScoradTrendChart";
@@ -102,6 +102,14 @@ const Journal = () => {
       await updateDoc(doc(firestore, "users", "patients", "accounts", userId, "actionItems", item.id), { completed: newStatus });
       setActionItems(prev => prev.map(a => a.id === item.id ? { ...a, completed: newStatus } : a));
     } catch (err) { console.error("Failed to toggle action item", err); }
+  };
+
+  const deleteActionItem = async (item) => {
+    if (!window.confirm("Are you sure you want to delete this task?")) return;
+    try {
+      await deleteDoc(doc(firestore, "users", "patients", "accounts", userId, "actionItems", item.id));
+      setActionItems(prev => prev.filter(a => a.id !== item.id));
+    } catch (err) { console.error("Failed to delete action item", err); }
   };
 
   const handleAnalyzeTriggers = async () => {
@@ -244,7 +252,7 @@ const Journal = () => {
             <h3 className="text-lg font-bold text-[#1C1917] tracking-tight">Daily Care & Clinical Visit</h3>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-            <ActionItemsSection actionItems={actionItems} toggleActionItem={toggleActionItem} />
+            <ActionItemsSection actionItems={actionItems} toggleActionItem={toggleActionItem} deleteActionItem={deleteActionItem} />
             <AppointmentSection upcomingAppts={upcomingAppts} onCancelClick={(appt) => { setCancelModalAppt(appt); setCancelReason(""); }} />
           </div>
         </div>

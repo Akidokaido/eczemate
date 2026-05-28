@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import DoctorLayout from "../../components/DoctorLayout";
+import Card from "../../components/shared/Card";
 import { auth, firestore, onAuthStateChanged, collection, query, where, getDocs } from "../../firebase/config";
 import { getUserCollectionRef } from "../../firebase/userPaths";
 import { Calendar, Users, AlertCircle, Clock, ChevronRight, Activity, TrendingUp } from "lucide-react";
@@ -149,7 +150,7 @@ const DoctorDashboard = () => {
         {/* Stat Cards Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {cards.map(({ label, value, sub, icon: Icon, color, onClick }, i) => (
-            <div key={label} onClick={onClick} className="bg-white border border-slate-100 p-6 rounded-2xl shadow-sm hover:shadow-md transition-shadow cursor-pointer relative overflow-hidden group">
+            <Card key={label} onClick={onClick} hoverEffect className="relative overflow-hidden group">
               <div className="absolute -right-6 -top-6 opacity-[0.03] transform group-hover:scale-110 transition-transform duration-500">
                  <Icon size={120} style={{ color }} />
               </div>
@@ -159,7 +160,7 @@ const DoctorDashboard = () => {
               {value !== null && <p className="text-4xl font-black text-slate-800 mb-1">{value}</p>}
               <p className="font-bold text-slate-600">{label}</p>
               <p className="text-xs font-semibold text-slate-400 mt-1">{sub}</p>
-            </div>
+            </Card>
           ))}
         </div>
 
@@ -170,7 +171,7 @@ const DoctorDashboard = () => {
           <div className="lg:col-span-2 space-y-6">
 
              {/* Demographics Chart */}
-             <div className="bg-white border border-slate-100 rounded-2xl shadow-sm p-6">
+             <Card>
                 <div className="mb-4">
                    <h3 className="font-bold text-slate-800 flex items-center gap-2"><TrendingUp className="text-emerald-500 h-5 w-5"/> Patient SCORAD Distribution</h3>
                    <p className="text-xs text-slate-400 font-semibold mt-1">Based on each patient's most recent SCORAD assessment. Scores are grouped by clinical severity thresholds.</p>
@@ -231,7 +232,7 @@ const DoctorDashboard = () => {
                       </ResponsiveContainer>
                    )}
                 </div>
-             </div>
+             </Card>
 
           </div>
 

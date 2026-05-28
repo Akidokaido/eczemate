@@ -56,11 +56,8 @@ const Footer = () => {
 
           {/* Logo & Info */}
           <div className="md:col-span-1 space-y-6">
-            <div className="flex items-center gap-2">
-               <div className="w-8 h-8 bg-[#0D9488] rounded-xl flex items-center justify-center text-white font-bold text-lg shadow-sm">
-                 E+
-               </div>
-               <span className="text-xl font-extrabold text-[#1C1917]">EczeMate+</span>
+            <div className="flex items-center gap-2 cursor-pointer hover:opacity-80 transition pt-2 pb-4" onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}>
+               <img src="/images/logo.png" alt="Eczemate Logo" className="h-12 sm:h-14 w-auto object-contain scale-[3] origin-left" />
             </div>
             <p className="text-sm text-[#64748B] leading-relaxed max-w-xs">
               Your intelligent companion for eczema management. Track, journal, and connect with professionals to regain control over your skin health.

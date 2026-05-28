@@ -45,8 +45,8 @@ const Header = ({ user, profile, isDashboard = false, tabs = [], activeSection, 
           <div className="flex items-center gap-2 cursor-pointer hover:opacity-80 transition" onClick={() => navigate("/")}>
             <img 
               src="/images/logo.png" 
-              alt="EczeMate+" 
-              className="h-10 w-auto object-contain scale-[2.5] origin-left" 
+              alt="EczeMate Logo" 
+              className="h-12 sm:h-14 w-auto object-contain scale-[3] origin-left" 
             />
           </div>
         </div>

@@ -13,6 +13,8 @@ import MedicalRecord from "../../features/MedicalRecord";
 import { Activity, BookOpen, MessageSquare, Calendar, Plus, List, XCircle, FileText } from "lucide-react";
 import Header from "../../components/shared/Header";
 import Footer from "../../components/shared/Footer";
+import Card from "../../components/shared/Card";
+import StatusBadge from "../../components/shared/StatusBadge";
 
 const PatientDashboard = () => {
   const [activeSection, setActiveSection] = useState("track");
@@ -155,9 +157,9 @@ const PatientDashboard = () => {
                   ) : (
                     <div className="space-y-4 stagger">
                       {appointments.map((appt, i) => (
-                        <div
+                        <Card
                           key={appt.id}
-                          className="glow-card p-5 flex justify-between items-center animate-fade-in-up"
+                          className="flex justify-between items-center animate-fade-in-up"
                           style={{ animationDelay: `${i * 60}ms` }}
                         >
                           <div>
@@ -171,20 +173,14 @@ const PatientDashboard = () => {
                             <p className="text-sm" style={{ color: "var(--text-muted)" }}>{appt.reason}</p>
                           </div>
                           <div className="flex items-center gap-2">
-                            <span className={`badge ${
-                              appt.status === "approved"   ? "badge-approved"   :
-                              appt.status === "rejected"   ? "badge-rejected"   :
-                              appt.status === "cancelled"  ? "badge-cancelled"  : "badge-pending"
-                            }`}>
-                              {appt.status?.charAt(0).toUpperCase() + appt.status?.slice(1)}
-                            </span>
+                            <StatusBadge status={appt.status} />
                             {appt.status !== "cancelled" && (
                               <button onClick={() => setCancelModalAppt(appt)} className="text-red-500 hover:text-red-700">
                                 <XCircle className="h-4 w-4" />
                               </button>
                             )}
                           </div>
-                        </div>
+                        </Card>
                       ))}
                     </div>
                   )}

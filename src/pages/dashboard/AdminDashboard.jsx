@@ -7,6 +7,7 @@ import { getUserDocRef, getUserCollectionRef } from "../../firebase/userPaths";
 import { LayoutDashboard, Users, UserCog, Shield, Clock, X } from "lucide-react";
 import Header from "../../components/shared/Header";
 import Footer from "../../components/shared/Footer";
+import Card from "../../components/shared/Card";
 import ManagePatients from "../../components/doctor/ManagePatients";
 import ManageDoctors from "../../components/doctor/ManageDoctors";
 import ManageAppointments from "../../components/doctor/ManageAppointments";
@@ -92,7 +93,7 @@ const AdminDashboard = () => {
               <div className="p-8 max-w-7xl mx-auto">
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6 stagger">
                 {cards.map(({ label, desc, icon: Icon, color, sectionId, badge }, i) => (
-                  <div key={label} onClick={() => setActiveSection(sectionId)} className="glow-card p-6 cursor-pointer animate-fade-in-up" style={{ animationDelay: `${i * 80}ms` }}>
+                  <Card key={label} onClick={() => setActiveSection(sectionId)} hoverEffect className="animate-fade-in-up" style={{ animationDelay: `${i * 80}ms` }}>
                     <div className="flex items-center justify-between mb-4">
                       <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ background: `${color}12` }}>
                         <Icon className="h-5 w-5" style={{ color }} />
@@ -105,7 +106,7 @@ const AdminDashboard = () => {
                     </div>
                     <h3 className="font-semibold text-lg" style={{ color: "var(--text-primary)" }}>{label}</h3>
                     <p className="text-sm mt-1" style={{ color: "var(--text-muted)" }}>{desc}</p>
-                  </div>
+                  </Card>
                 ))}
                 </div>
               </div>

@@ -1,7 +1,7 @@
 import React, { useState } from "react";
-import { BookOpen, CheckCircle, ListChecks, ChevronDown, ChevronUp } from "lucide-react";
+import { BookOpen, CheckCircle, ListChecks, ChevronDown, ChevronUp, Trash2 } from "lucide-react";
 
-const ActionItemsSection = ({ actionItems, toggleActionItem }) => {
+const ActionItemsSection = ({ actionItems, toggleActionItem, deleteActionItem }) => {
   const [showCompleted, setShowCompleted] = useState(false);
   const activeTasks = actionItems.filter(item => !item.completed);
   const completedTasks = actionItems.filter(item => item.completed);
@@ -52,6 +52,13 @@ const ActionItemsSection = ({ actionItems, toggleActionItem }) => {
                   </div>
                 )}
               </div>
+              <button 
+                onClick={() => deleteActionItem(item)}
+                className="opacity-0 group-hover:opacity-100 p-1.5 text-slate-300 hover:text-red-500 hover:bg-red-50 rounded-lg transition-all"
+                title="Delete task"
+              >
+                <Trash2 className="w-4 h-4" />
+              </button>
             </div>
           ))}
           {activeTasks.length === 0 && actionItems.length > 0 && (
@@ -93,6 +100,13 @@ const ActionItemsSection = ({ actionItems, toggleActionItem }) => {
                       </div>
                     )}
                   </div>
+                  <button 
+                    onClick={() => deleteActionItem(item)}
+                    className="opacity-0 group-hover:opacity-100 p-1.5 text-slate-300 hover:text-red-500 hover:bg-red-50 rounded-lg transition-all"
+                    title="Delete task"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </button>
                 </div>
               ))}
             </div>
