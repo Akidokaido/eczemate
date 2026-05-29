@@ -238,21 +238,50 @@ const DoctorDashboard = () => {
 
           {/* Right Column: Today's Schedule (1/3) */}
           <div className="lg:col-span-1 bg-white border border-slate-100 rounded-2xl shadow-sm flex flex-col h-[650px]">
-             <div className="bg-[#0D9488]/10 px-6 py-5 flex flex-col gap-3 border-b border-[#0D9488]/20 rounded-t-2xl">
+             <div className="bg-[#0D9488]/10 px-6 py-5 flex flex-col gap-4 border-b border-[#0D9488]/20 rounded-t-2xl">
                 <div className="flex items-center justify-between">
                    <h3 className="font-bold text-[#0D9488] flex items-center gap-2"><Calendar className="h-5 w-5"/> Daily Schedule</h3>
-                   <div className="relative">
-                     <input 
-                       type="date" 
-                       value={scheduleDate}
-                       onChange={(e) => setScheduleDate(e.target.value)}
-                       className="text-[10px] font-bold uppercase tracking-widest bg-white border border-[#0D9488]/20 rounded-lg px-2 py-1 text-[#0D9488] cursor-pointer outline-none focus:ring-2 focus:ring-[#0D9488]/20"
-                     />
-                   </div>
+                   <p className="text-[10px] font-bold uppercase tracking-widest text-[#0D9488] bg-white border border-[#0D9488]/20 rounded-lg px-2 py-1">
+                     {new Date(scheduleDate).toLocaleDateString('en-US', { month: 'short', year: 'numeric' })}
+                   </p>
                 </div>
-                <p className="text-xs font-semibold text-[#0D9488]/80">
-                  {new Date(scheduleDate).toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}
-                </p>
+                
+                {/* 7-Day Horizontal Strip Calendar */}
+                <div className="flex justify-between items-center mt-2">
+                  {(() => {
+                    const dates = [];
+                    const baseDate = new Date(scheduleDate);
+                    baseDate.setDate(baseDate.getDate() - 3); // Show 3 days before and 3 days after
+                    for (let i = 0; i < 7; i++) {
+                      dates.push(new Date(baseDate));
+                      baseDate.setDate(baseDate.getDate() + 1);
+                    }
+                    return dates.map((d, i) => {
+                      const dStr = d.toISOString().split("T")[0];
+                      const isSelected = dStr === scheduleDate;
+                      
+                      // Check if there is an approved appointment on this day
+                      const hasAppt = allAppointments.some(a => {
+                        const aStr = a.date?.toDate ? a.date.toDate().toISOString().split("T")[0] : new Date(a.date).toISOString().split("T")[0];
+                        return aStr === dStr && a.status === "approved";
+                      });
+
+                      return (
+                        <div 
+                          key={i} 
+                          onClick={() => setScheduleDate(dStr)}
+                          className={`flex flex-col items-center justify-center p-2 min-w-[3rem] rounded-xl cursor-pointer transition-all ${isSelected ? 'bg-[#0D9488] text-white shadow-md' : 'hover:bg-white/60 text-slate-600'}`}
+                        >
+                          <span className="text-[10px] font-bold uppercase tracking-wider opacity-80">{d.toLocaleDateString('en-US', { weekday: 'short' })}</span>
+                          <span className={`text-lg font-black mt-0.5 ${isSelected ? 'text-white' : 'text-[#0D9488]'}`}>{d.getDate()}</span>
+                          
+                          {/* The Green Dot Indicator */}
+                          <div className={`h-1.5 w-1.5 rounded-full mt-1 ${hasAppt ? (isSelected ? 'bg-white' : 'bg-emerald-500') : 'bg-transparent'}`} />
+                        </div>
+                      );
+                    });
+                  })()}
+                </div>
              </div>
              
              <div className="flex-1 overflow-y-auto p-4 space-y-4 custom-scrollbar">

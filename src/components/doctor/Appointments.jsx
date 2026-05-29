@@ -108,7 +108,7 @@ const Appointments = () => {
         ) : filteredAppointments.length === 0 ? (
           <div className="glass p-8 text-center" style={{ color: "var(--text-secondary)" }}>No appointments match your search.</div>
         ) : (
-          <div className="stagger space-y-4">
+          <div className="stagger space-y-4 max-h-[70vh] overflow-y-auto custom-scrollbar pr-2 pb-4">
             {filteredAppointments.map((appt, i) => (
               <div key={appt.id} className="glow-card p-5 flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 animate-fade-in-up" style={{ animationDelay: `${i * 60}ms` }}>
                 <div>

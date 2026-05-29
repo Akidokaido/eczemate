@@ -65,7 +65,7 @@ const Patients = () => {
             {searchQuery ? `No patients matching "${searchQuery}"` : "No patients assigned."}
           </div>
         ) : (
-          <div className="stagger space-y-3">
+          <div className="stagger space-y-3 max-h-[70vh] overflow-y-auto custom-scrollbar pr-2 pb-4">
             {filteredPatients.map((p, i) => (
               <div key={p.id} className="glow-card p-5 flex justify-between items-center animate-fade-in-up" style={{ animationDelay: `${i * 50}ms` }}>
                 <div className="flex items-center gap-4">
