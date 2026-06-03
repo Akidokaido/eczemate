@@ -239,7 +239,7 @@ const Journal = () => {
         </div>
 
         {/* ═══════════════════════════════════════════ */}
-        {/* SECTION 1: SCORAD Progress Chart          */}
+        {/* SECTION 1: PO-SCORAD Progress Chart          */}
         {/* ═══════════════════════════════════════════ */}
         <ScoradTrendChart data={trackProgressData} />
 

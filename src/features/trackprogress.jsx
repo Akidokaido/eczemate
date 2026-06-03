@@ -6,10 +6,44 @@ import { getAuth } from "firebase/auth";
 import BodyMap from "../components/shared/BodyMap";
 
 const SCORAD_AREA_MAP = {
-  head: 4.5, neck: 4.5, chest: 9, abs: 4.5, obliques: 4.5,
-  "upper-back": 6, trapezius: 3, "lower-back": 9,
-  deltoids: 4, biceps: 3, triceps: 3, forearm: 4, hands: 4,
-  gluteal: 9, quadriceps: 8, hamstring: 8, calves: 6, tibialis: 4, feet: 4,
+  F_head: 4.5,
+  F_upperTorso: 6,
+  F_lowerTorso: 6,
+  F_waist: 6,
+  F_genitals: 1,
+  F_rightShoulder: 1,
+  F_rightUpperArm: 1.25,
+  F_rightForearm: 1.5,
+  F_rightPalm: 0.75,
+  F_leftShoulder: 1,
+  F_leftUpperArm: 1.25,
+  F_leftForearm: 1.5,
+  F_leftPalm: 0.75,
+  F_rightThigh: 4,
+  F_rightLeg: 4,
+  F_rightFoot: 1,
+  F_leftThigh: 4,
+  F_leftLowerLeg: 4,
+  F_leftFoot: 1,
+
+  B_head: 4.5,
+  B_upperTorso: 6,
+  B_lowerTorso: 6,
+  B_waist: 6,
+  B_rightShoulder: 1,
+  B_rightUpperArm: 1.25,
+  B_rightForearm: 1.5,
+  B_rightPalm: 0.75,
+  B_leftShoulder: 1,
+  B_leftUpperArm: 1.25,
+  B_leftForearm: 1.5,
+  B_leftPalm: 0.75,
+  B_buttocks: 8,
+  B_buttocksLine: 0,
+  B_rightLeg: 4,
+  B_rightFoot: 1,
+  B_leftLowerLeg: 4,
+  B_leftFoot: 1,
 };
 
 const calculateSCORADArea = (selectedParts) => {
@@ -141,11 +175,11 @@ const getRecommendations = (score, skin, itch, sleep, triggers, foods, medicatio
 };
 
 const getAiInsight = (score, skin, itch, sleep) => {
-  if (score > 50) return "Your SCORAD score indicates severe eczema. This level of severity typically requires medical intervention. Your symptoms suggest active inflammation that may benefit from prescription-strength topical corticosteroids or immunomodulators. Please prioritize seeing your dermatologist.";
+  if (score > 50) return "Your PO-SCORAD score indicates severe eczema. This level of severity typically requires medical intervention. Your symptoms suggest active inflammation that may benefit from prescription-strength topical corticosteroids or immunomodulators. Please prioritize seeing your dermatologist.";
   if (score >= 40) return "Your eczema is in the moderate-to-severe range. The combination of your clinical signs suggests ongoing inflammation. Focus on consistent moisturizing, trigger avoidance, and consider discussing a step-up in your treatment plan with your doctor.";
-  if (score >= 26) return "Your SCORAD indicates moderate eczema. While manageable, your symptoms would benefit from a structured care routine. Pay attention to your identified triggers and maintain regular moisturizing to prevent flare-ups.";
+  if (score >= 26) return "Your PO-SCORAD indicates moderate eczema. While manageable, your symptoms would benefit from a structured care routine. Pay attention to your identified triggers and maintain regular moisturizing to prevent flare-ups.";
   if (score >= 10) return "Your eczema is mild but still present. Continue your current management and pay attention to patterns — tracking your triggers and diet will help you identify what causes flare-ups over time.";
-  return "Great news! Your SCORAD score is very low, indicating minimal eczema activity. Keep up your current skincare routine and continue monitoring for any changes.";
+  return "Great news! Your PO-SCORAD score is very low, indicating minimal eczema activity. Keep up your current skincare routine and continue monitoring for any changes.";
 };
 
 
@@ -159,13 +193,13 @@ const InsightCard = ({ scoradScore, onClose, setActiveTab }) => {
 
   if (scoradScore > 50) {
     classification = "Severe";
-    description = "Your SCORAD indicates severe eczema. We strongly recommend seeking medical attention and booking an appointment with your dermatologist.";
+    description = "Your PO-SCORAD indicates severe eczema. We strongly recommend seeking medical attention and booking an appointment with your dermatologist.";
   } else if (scoradScore >= 26) {
     classification = "Moderate";
-    description = "Your SCORAD indicates moderate eczema. We recommend consulting your dermatologist to review your treatment plan.";
+    description = "Your PO-SCORAD indicates moderate eczema. We recommend consulting your dermatologist to review your treatment plan.";
   } else {
     classification = "Mild";
-    description = "Your SCORAD indicates mild eczema. Keep up your current management routine!";
+    description = "Your PO-SCORAD indicates mild eczema. Keep up your current management routine!";
   }
 
   if (isSevereOrModerate) {
@@ -179,7 +213,7 @@ const InsightCard = ({ scoradScore, onClose, setActiveTab }) => {
   return (
     <div className="fixed inset-0 flex justify-center items-center bg-black/50 z-50 p-4">
       <div className="bg-white p-8 rounded-2xl shadow-xl max-w-sm w-full text-center">
-        <h2 className="text-2xl font-bold mb-2 text-[#1C1917]">SCORAD Result</h2>
+        <h2 className="text-2xl font-bold mb-2 text-[#1C1917]">PO-SCORAD Result</h2>
         <div className={`text-6xl font-black my-4 ${scoradScore > 50 ? 'text-red-500' : scoradScore >= 26 ? 'text-[#F97316]' : 'text-[#0D9488]'}`}>{Math.round(scoradScore)}</div>
         <div className="text-xl font-bold text-[#1C1917]">{classification}</div>
         <p className="text-sm text-[#64748B] mt-4 leading-relaxed">{description}</p>
@@ -206,6 +240,8 @@ export default function TrackProgress({ setActiveSection }) {
   const [itch, setItch] = useState(0);
   const [sleep, setSleep] = useState(0);
   const [affectedAreas, setAffectedAreas] = useState([]);
+  const [photos, setPhotos] = useState({});
+  const [filesToUpload, setFilesToUpload] = useState({});
   const [showBSAInfo, setShowBSAInfo] = useState(false);
   const [showSCORADInfo, setShowSCORADInfo] = useState(false);
 
@@ -224,6 +260,11 @@ export default function TrackProgress({ setActiveSection }) {
   const [newMedDosage, setNewMedDosage] = useState("");
   const [newMedFreq, setNewMedFreq] = useState("");
   const [newMedStatus, setNewMedStatus] = useState("ongoing");
+
+  const handlePhotoUpload = (partId, file, url) => {
+    setPhotos(prev => ({ ...prev, [partId]: url }));
+    if (file) setFilesToUpload(prev => ({ ...prev, [partId]: file }));
+  };
 
   const [showInsight, setShowInsight] = useState(false);
   const [scoradScore, setScoradScore] = useState(0);
@@ -261,6 +302,7 @@ export default function TrackProgress({ setActiveSection }) {
     setItch(data.itch ?? 0);
     setSleep(data.sleep ?? 0);
     setAffectedAreas(data.affectedAreas || []);
+    setPhotos(data.photos || {});
 
     const envTriggers = data.triggers?.environmental || [];
     const foodTriggers = data.triggers?.food || [];
@@ -292,9 +334,46 @@ export default function TrackProgress({ setActiveSection }) {
     checkExisting();
   }, []);
 
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
   const handleSubmit = async () => {
     const user = getAuth().currentUser;
     if (!user) return alert("You need to be logged in.");
+
+    setIsSubmitting(true);
+    let finalPhotos = { ...photos };
+
+    // Upload files to Cloudinary
+    try {
+      const cloudName = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME;
+      const uploadPreset = import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET;
+      
+      const uploadPromises = Object.entries(filesToUpload).map(async ([partId, file]) => {
+        const formData = new FormData();
+        formData.append("file", file);
+        formData.append("upload_preset", uploadPreset);
+        
+        const response = await fetch(`https://api.cloudinary.com/v1_1/${cloudName}/image/upload`, {
+          method: "POST",
+          body: formData
+        });
+        
+        if (!response.ok) {
+          throw new Error("Failed to upload image to Cloudinary");
+        }
+        
+        const data = await response.json();
+        finalPhotos[partId] = data.secure_url;
+      });
+      
+      if (uploadPromises.length > 0) {
+        await Promise.all(uploadPromises);
+      }
+    } catch (err) {
+      alert(`Error uploading photos: ${err.message}`);
+      setIsSubmitting(false);
+      return;
+    }
 
     const A = calculateSCORADArea(affectedAreas);
     const B = skin.redness + skin.swelling + skin.oozing + skin.scratch + skin.lichenification + skin.dryness;
@@ -308,6 +387,7 @@ export default function TrackProgress({ setActiveSection }) {
       affectedAreas,
       scoradScore: calculatedScorad,
       percentage: calculatedScorad, 
+      photos: finalPhotos,
       triggers: {
         environmental: [...activeTriggers, ...customTriggers],
         food: [...activeFoods, ...customFoods],
@@ -328,8 +408,12 @@ export default function TrackProgress({ setActiveSection }) {
       setHasSubmittedToday(true);
       setIsEditing(false);
       setShowInsight(true);
+      setPhotos(finalPhotos); // Ensure state uses the permanent URLs
+      setFilesToUpload({}); // Clear temporary files
     } catch (error) {
       alert(`Error saving your progress: ${error.message}`);
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -357,7 +441,7 @@ export default function TrackProgress({ setActiveSection }) {
                </div>
                {/* Tooltip */}
                <div className="absolute top-full right-0 mt-2 w-72 bg-slate-800 text-white text-xs p-3 rounded-xl shadow-xl opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-50 font-medium">
-                 SCORAD (SCORing Atopic Dermatitis) is a clinical formula that calculates eczema severity based on affected body area (20%), intensity of redness/swelling (60%), and subjective symptoms like itchiness and sleep loss (20%).
+                 PO-SCORAD (Patient-Oriented SCORing Atopic Dermatitis) is a clinical formula that calculates eczema severity based on affected body area (20%), intensity of redness/swelling (60%), and subjective symptoms like itchiness and sleep loss (20%).
                  <div className="absolute bottom-full right-3 border-4 border-transparent border-b-slate-800"></div>
                </div>
              </div>
@@ -381,7 +465,7 @@ export default function TrackProgress({ setActiveSection }) {
                    </svg>
                    <div className="absolute flex flex-col items-center justify-center">
                       <span className="text-4xl sm:text-5xl font-black">{Math.round(scoradScore)}</span>
-                      <span className="text-[10px] text-white/80 font-bold uppercase tracking-widest mt-1">SCORAD</span>
+                      <span className="text-[10px] text-white/80 font-bold uppercase tracking-widest mt-1">PO-SCORAD</span>
                    </div>
                 </div>
                 <div className="flex flex-col gap-3">
@@ -528,7 +612,7 @@ export default function TrackProgress({ setActiveSection }) {
                       <span className="text-xs font-bold text-rose-500 bg-rose-50 px-2.5 py-1 rounded-md">{Math.round(calculateSCORADArea(affectedAreas))}% BSA</span>
                    </div>
                    <div className="flex-1 flex justify-center items-center p-4 bg-[#FAFAF9] relative">
-                      <BodyMap selectedParts={affectedAreas} readOnly />
+                      <BodyMap selectedParts={affectedAreas} photos={photos} readOnly />
                    </div>
                 </div>
 
@@ -546,7 +630,7 @@ export default function TrackProgress({ setActiveSection }) {
         
         <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 flex items-center justify-between">
           <div>
-            <h1 className="text-2xl font-bold text-slate-800">{isEditing ? "Edit SCORAD Evaluation" : "Daily SCORAD Evaluation"}</h1>
+            <h1 className="text-2xl font-bold text-slate-800">{isEditing ? "Edit PO-SCORAD Evaluation" : "Daily PO-SCORAD Evaluation"}</h1>
             <p className="text-sm text-slate-500 mt-1">Fill out the sections below to track your symptoms today.</p>
           </div>
           {isEditing && (
@@ -576,7 +660,7 @@ export default function TrackProgress({ setActiveSection }) {
 
         <CollapsibleSection title="3. Extent (Affected Areas)" icon={<Activity className="text-sky-500" />}>
           <div className="bg-slate-50 border border-slate-100 rounded-2xl p-6 flex justify-center shadow-inner mt-4">
-            <BodyMap selectedParts={affectedAreas} onTogglePart={(part) => setAffectedAreas(prev => prev.includes(part) ? prev.filter(p => p !== part) : [...prev, part])} />
+            <BodyMap selectedParts={affectedAreas} photos={photos} onPhotoUpload={handlePhotoUpload} onTogglePart={(part) => setAffectedAreas(prev => prev.includes(part) ? prev.filter(p => p !== part) : [...prev, part])} />
           </div>
         </CollapsibleSection>
 
@@ -635,8 +719,18 @@ export default function TrackProgress({ setActiveSection }) {
         </CollapsibleSection>
 
         <div className="pt-2 flex justify-end gap-4">
-          <button onClick={handleSubmit} className="bg-sky-500 hover:bg-sky-600 text-white px-10 py-3.5 rounded-2xl font-bold shadow-md shadow-sky-200 transition-all flex items-center gap-2">
-            <CheckCircle size={20} /> {isEditing ? "Update SCORAD Log" : "Submit SCORAD Log"}
+          <button onClick={handleSubmit} disabled={isSubmitting} className={`px-10 py-3.5 rounded-2xl font-bold shadow-md transition-all flex items-center gap-2 ${isSubmitting ? 'bg-slate-400 text-white cursor-not-allowed shadow-none' : 'bg-sky-500 hover:bg-sky-600 text-white shadow-sky-200'}`}>
+            {isSubmitting ? (
+              <>
+                <svg className="animate-spin -ml-1 mr-2 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+                Saving & Uploading...
+              </>
+            ) : (
+              <>
+                <CheckCircle size={20} />
+                {isEditing ? "Update PO-SCORAD Log" : "Submit PO-SCORAD Log"}
+              </>
+            )}
           </button>
         </div>
 

@@ -84,7 +84,7 @@ const ScoradTrendChart = ({ data }) => {
           <div>
             <div className="flex items-center gap-2 mb-1">
               <h4 className="text-lg font-bold text-[#1C1917] tracking-tight flex items-center gap-2">
-                <TrendingUp className="h-5 w-5 text-[#0D9488]" /> SCORAD Trend
+                <TrendingUp className="h-5 w-5 text-[#0D9488]" /> PO-SCORAD Trend
               </h4>
               <Sparkles className="h-3.5 w-3.5 text-[#0D9488] animate-pulse" />
             </div>
@@ -134,7 +134,7 @@ const ScoradTrendChart = ({ data }) => {
               <Tooltip
                 contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 20px rgba(0,0,0,0.1)', fontSize: 13 }}
                 labelFormatter={(label) => `Day ${label}`}
-                formatter={(val) => [`${val}`, 'SCORAD Score']}
+                formatter={(val) => [`${val}`, 'PO-SCORAD Score']}
               />
               <ReferenceLine y={25} stroke="#86efac" strokeDasharray="4 4" strokeWidth={1.5} />
               <ReferenceLine y={50} stroke="#fbbf24" strokeDasharray="4 4" strokeWidth={1.5} />

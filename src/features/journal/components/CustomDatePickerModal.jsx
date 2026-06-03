@@ -247,7 +247,7 @@ const CustomDatePickerModal = ({ isOpen, onClose, onSelect, initialMode = 'week'
           {/* Footer Legend & Action */}
           <div className="mt-8 pt-6 border-t border-slate-100 flex flex-col sm:flex-row items-center justify-between gap-4">
             <div className="flex items-center gap-4 text-xs font-bold text-slate-600">
-              <span className="uppercase text-[10px] tracking-widest text-slate-400">SCORAD key:</span>
+              <span className="uppercase text-[10px] tracking-widest text-slate-400">PO-SCORAD key:</span>
               <span className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-emerald-500"></span> Mild</span>
               <span className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-amber-500"></span> Moderate</span>
               <span className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-rose-500"></span> Severe</span>

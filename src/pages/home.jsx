@@ -107,7 +107,7 @@ const Home = () => {
                 EczeMate brings everything into focus. Log your symptoms, let AI analyze your patterns, and share precise, standardized data with your dermatologist for better treatment outcomes.
               </p>
               <ul className="space-y-4 relative z-10">
-                {["Standardized SCORAD tracking", "AI-powered trigger identification", "Direct clinical connectivity"].map((item, i) => (
+                {["Standardized PO-SCORAD tracking", "AI-powered trigger identification", "Direct clinical connectivity"].map((item, i) => (
                   <li key={i} className="flex items-center gap-3 text-white font-medium">
                     <div className="w-6 h-6 rounded-full bg-white/20 flex items-center justify-center text-white"><CheckCircle size={14} /></div>
                     {item}
@@ -145,7 +145,7 @@ const Home = () => {
                 <div className="w-12 h-12 rounded-xl bg-[#F97316]/10 flex items-center justify-center text-[#F97316] mb-5">
                   <LineChart size={24} />
                 </div>
-                <h3 className="text-xl font-bold text-[#1C1917] mb-2">SCORAD Tracking</h3>
+                <h3 className="text-xl font-bold text-[#1C1917] mb-2">PO-SCORAD Tracking</h3>
                 <p className="text-[#64748B] text-sm leading-relaxed">Clinically validated severity scoring to accurately measure your skin health.</p>
               </div>
             </div>
@@ -219,7 +219,7 @@ const Home = () => {
               { icon: Droplets, title: "Skincare Routine", desc: "Daily moisturizing with thick emollients within 3 minutes of bathing." },
               { icon: Target, title: "Trigger Avoidance", desc: "Identifying and avoiding harsh soaps, scratchy fabrics, or specific foods." },
               { icon: BookOpen, title: "Medications", desc: "Consistent use of prescribed topical treatments as directed." },
-              { icon: Search, title: "Symptom Tracking", desc: "Regularly logging SCORAD metrics to monitor progress." },
+              { icon: Search, title: "Symptom Tracking", desc: "Regularly logging PO-SCORAD metrics to monitor progress." },
               { icon: Heart, title: "Regular Check-ups", desc: "Working closely with dermatologists to refine your plan." },
               { icon: Sun, title: "Mental Health", desc: "Managing stress and anxiety, which exacerbate flare-ups." }
             ].map(({ icon: Icon, title, desc }) => (

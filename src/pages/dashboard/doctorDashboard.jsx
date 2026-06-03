@@ -173,8 +173,8 @@ const DoctorDashboard = () => {
              {/* Demographics Chart */}
              <Card>
                 <div className="mb-4">
-                   <h3 className="font-bold text-slate-800 flex items-center gap-2"><TrendingUp className="text-emerald-500 h-5 w-5"/> Patient SCORAD Distribution</h3>
-                   <p className="text-xs text-slate-400 font-semibold mt-1">Based on each patient's most recent SCORAD assessment. Scores are grouped by clinical severity thresholds.</p>
+                   <h3 className="font-bold text-slate-800 flex items-center gap-2"><TrendingUp className="text-emerald-500 h-5 w-5"/> Patient PO-SCORAD Distribution</h3>
+                   <p className="text-xs text-slate-400 font-semibold mt-1">Based on each patient's most recent PO-SCORAD assessment. Scores are grouped by clinical severity thresholds.</p>
                 </div>
 
                 {/* Severity Breakdown Cards */}
@@ -202,7 +202,7 @@ const DoctorDashboard = () => {
                       <div className="h-full flex flex-col items-center justify-center text-slate-400">
                         <TrendingUp className="h-8 w-8 mb-2 opacity-30" />
                         <p className="text-sm font-semibold">Not enough tracking data from patients yet.</p>
-                        <p className="text-xs mt-1">Patients need to complete at least one SCORAD assessment.</p>
+                        <p className="text-xs mt-1">Patients need to complete at least one PO-SCORAD assessment.</p>
                       </div>
                    ) : (
                       <ResponsiveContainer width="99%" height={250}>
@@ -330,7 +330,7 @@ const DoctorDashboard = () => {
                 </div>
                 <div>
                   <h3 className="font-black text-rose-800 text-lg">High Risk Patients</h3>
-                  <p className="text-xs font-semibold text-rose-500">SCORAD score above 50</p>
+                  <p className="text-xs font-semibold text-rose-500">PO-SCORAD score above 50</p>
                 </div>
               </div>
               <button onClick={() => setShowAlertsModal(false)} className="w-8 h-8 rounded-full bg-rose-100 hover:bg-rose-200 flex items-center justify-center text-rose-600 transition font-bold text-lg leading-none">&times;</button>
@@ -357,9 +357,9 @@ const DoctorDashboard = () => {
                       </div>
                     </div>
                     <div className="flex items-center gap-3">
-                      {/* SCORAD Badge */}
+                      {/* PO-SCORAD Badge */}
                       <div className="text-center">
-                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">SCORAD</p>
+                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">PO-SCORAD</p>
                         <p className="text-2xl font-black text-rose-600 leading-tight">{alert.score}</p>
                         <span className="text-[10px] font-bold text-rose-500 bg-rose-50 border border-rose-100 px-2 py-0.5 rounded-full">Severe</span>
                       </div>

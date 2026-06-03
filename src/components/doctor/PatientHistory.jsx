@@ -345,7 +345,7 @@ const PatientHistory = () => {
         <div className="bg-white border border-slate-100 rounded-2xl shadow-sm p-6 print-hide">
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-lg font-bold text-slate-800 flex items-center gap-2">
-              <TrendingUp className="h-5 w-5 text-[#0D9488]" /> SCORAD Trend
+              <TrendingUp className="h-5 w-5 text-[#0D9488]" /> PO-SCORAD Trend
             </h3>
             {scoradHistory.length > 0 && (
               <div className="flex items-center gap-4 text-xs font-bold">
@@ -358,7 +358,7 @@ const PatientHistory = () => {
           {scoradHistory.length === 0 ? (
             <div className="h-40 flex flex-col items-center justify-center text-slate-400">
               <TrendingUp className="h-8 w-8 mb-2 opacity-30" />
-              <p className="text-sm font-semibold">No SCORAD data recorded yet.</p>
+              <p className="text-sm font-semibold">No PO-SCORAD data recorded yet.</p>
             </div>
           ) : (
             <div className="h-56">
@@ -369,7 +369,7 @@ const PatientHistory = () => {
                   <YAxis domain={[0, 103]} tick={{ fontSize: 11, fill: '#94a3b8', fontWeight: 600 }} tickLine={false} axisLine={false} width={30} />
                   <Tooltip
                     contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 20px rgba(0,0,0,0.1)', fontSize: 13 }}
-                    formatter={(val) => [`${val}`, 'SCORAD Score']}
+                    formatter={(val) => [`${val}`, 'PO-SCORAD Score']}
                   />
                   <ReferenceLine y={25} stroke="#86efac" strokeDasharray="4 4" strokeWidth={1.5} />
                   <ReferenceLine y={50} stroke="#fbbf24" strokeDasharray="4 4" strokeWidth={1.5} />
