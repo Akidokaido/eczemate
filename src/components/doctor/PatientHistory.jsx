@@ -1,10 +1,14 @@
 import React, { useState, useEffect } from "react";
 import { useParams } from "react-router-dom";
 import DoctorLayout from "../DoctorLayout";
-import { firestore, auth, onAuthStateChanged, collection, query, where, getDocs, orderBy, getDoc, addDoc, serverTimestamp, Timestamp } from "../../firebase/config";
+import { firestore, auth, onAuthStateChanged, collection, query, where, getDocs, orderBy, getDoc, addDoc, serverTimestamp, Timestamp, doc, updateDoc } from "../../firebase/config";
 import { getUserDocRef } from "../../firebase/userPaths";
-import { Send, FileText, CheckSquare, Printer, Stethoscope, CalendarDays, ClipboardList, CalendarPlus, Clock, TrendingUp } from "lucide-react";
+import { Send, FileText, CheckSquare, Printer, Stethoscope, CalendarDays, ClipboardList, CalendarPlus, Clock, TrendingUp, CheckCircle } from "lucide-react";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine } from "recharts";
+import ScoradTrendChart from "../../features/journal/components/ScoradTrendChart";
+import PastProgressLogs from "../../features/journal/components/PastProgressLogs";
+import ReactCalendar from 'react-calendar';
+import 'react-calendar/dist/Calendar.css';
 
 const TIME_SLOTS = [
   "8:00 AM", "9:00 AM", "10:00 AM", "11:00 AM",
@@ -26,7 +30,10 @@ const PatientHistory = () => {
   const [errorMsg, setErrorMsg] = useState("");
   const [medicalRecords, setMedicalRecords] = useState([]);
   const [recordDateFilter, setRecordDateFilter] = useState("");
+  const [journalDateFilter, setJournalDateFilter] = useState("");
   const [scoradHistory, setScoradHistory] = useState([]);
+  const [fullProgressLogs, setFullProgressLogs] = useState([]);
+  const [activeRecordTab, setActiveRecordTab] = useState("chart");
 
   // Set Future Appointment state
   const [apptDate, setApptDate] = useState("");
@@ -37,6 +44,19 @@ const PatientHistory = () => {
   const [apptSubmitting, setApptSubmitting] = useState(false);
   const [apptError, setApptError] = useState("");
   const [apptSuccess, setApptSuccess] = useState(false);
+  const [upcomingAppointments, setUpcomingAppointments] = useState([]);
+  const [apptDateFilter, setApptDateFilter] = useState(null);
+
+  const handleCompleteAppointment = async (apptId) => {
+    try {
+      const docRef = doc(firestore, "users", "patients", "accounts", patientId, "appointments", apptId);
+      await updateDoc(docRef, { status: "completed" });
+      setUpcomingAppointments(prev => prev.map(a => a.id === apptId ? { ...a, status: "completed" } : a));
+    } catch (err) {
+      console.error("Failed to complete appointment:", err);
+      alert("Failed to mark as completed.");
+    }
+  };
 
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, async (user) => {
@@ -129,14 +149,39 @@ const PatientHistory = () => {
             const tB = b.timestamp?.toMillis ? b.timestamp.toMillis() : new Date(b.timestamp || b.dateKey || 0).getTime();
             return tA - tB;
           });
-          const chartData = tracks.map(t => ({
-            date: t.dateKey || (t.timestamp?.toDate ? t.timestamp.toDate().toLocaleDateString("en-MY", { day: "numeric", month: "short" }) : "?"),
-            score: Math.round(t.scoradScore ?? t.finalPercentage ?? 0),
-          })).filter(t => t.score > 0);
+          const chartData = tracks.map(t => {
+            const dateObj = t.timestamp?.toDate ? t.timestamp.toDate() : new Date(t.timestamp || t.dateKey || 0);
+            return {
+              date: dateObj.toLocaleDateString("en-MY", { day: "numeric", month: "short" }),
+              fullDate: dateObj,
+              score: Math.round(t.scoradScore ?? t.finalPercentage ?? t.percentage ?? 0),
+            };
+          }).filter(t => t.score > 0);
           setScoradHistory(chartData);
+          setFullProgressLogs(tracks);
         } catch (e) {
           console.error("Error fetching track progress:", e);
         }
+
+        // 5. Fetch upcoming appointments
+        try {
+          const apptSnap = await getDocs(query(collection(firestore, "users", "patients", "accounts", patientId, "appointments"), where("doctorId", "==", doctorProfile.uid)));
+          const now = new Date(); now.setHours(0,0,0,0);
+          const appts = apptSnap.docs.map(d => ({ id: d.id, ...d.data() })).filter(a => {
+            if (a.status === "cancelled" || a.status === "rejected") return false;
+            const apptDate = a.date?.toDate ? a.date.toDate() : new Date(a.date);
+            return apptDate >= now;
+          });
+          appts.sort((a,b) => {
+             const dA = a.date?.toDate ? a.date.toDate() : new Date(a.date);
+             const dB = b.date?.toDate ? b.date.toDate() : new Date(b.date);
+             return dA - dB;
+          });
+          setUpcomingAppointments(appts);
+        } catch (e) {
+          console.error("Error fetching appointments:", e);
+        }
+
       } catch (err) {
         console.error("Critical Error in fetchData:", err);
         setErrorMsg("Failed to load patient data. Please try again.");
@@ -257,7 +302,7 @@ const PatientHistory = () => {
     if (!apptReason.trim()) { setApptError("Please provide a reason."); return; }
     setApptSubmitting(true);
     try {
-      await addDoc(collection(firestore, "users", "patients", "accounts", patientId, "appointments"), {
+      const apptData = {
         patientId,
         patientName: patient?.name || "",
         patientEmail: patient?.email || "",
@@ -269,7 +314,18 @@ const PatientHistory = () => {
         reason: apptReason.trim(),
         setByDoctor: true,
         createdAt: serverTimestamp(),
+      };
+      const docRef = await addDoc(collection(firestore, "users", "patients", "accounts", patientId, "appointments"), apptData);
+      
+      setUpcomingAppointments(prev => {
+        const updated = [...prev, { id: docRef.id, ...apptData }];
+        return updated.sort((a,b) => {
+          const dA = a.date?.toDate ? a.date.toDate() : new Date(a.date);
+          const dB = b.date?.toDate ? b.date.toDate() : new Date(b.date);
+          return dA - dB;
+        });
       });
+      
       setApptDate("");
       setApptTimeSlot("");
       setApptReason("");
@@ -341,313 +397,451 @@ const PatientHistory = () => {
           </button>
         </div>
 
-        {/* SCORAD Trend Chart */}
-        <div className="bg-white border border-slate-100 rounded-2xl shadow-sm p-6 print-hide">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="text-lg font-bold text-slate-800 flex items-center gap-2">
-              <TrendingUp className="h-5 w-5 text-[#0D9488]" /> PO-SCORAD Trend
-            </h3>
-            {scoradHistory.length > 0 && (
-              <div className="flex items-center gap-4 text-xs font-bold">
-                <span className="flex items-center gap-1"><span className="w-3 h-3 rounded-full bg-emerald-400 inline-block"></span> Mild (0–25)</span>
-                <span className="flex items-center gap-1"><span className="w-3 h-3 rounded-full bg-amber-400 inline-block"></span> Moderate (26–50)</span>
-                <span className="flex items-center gap-1"><span className="w-3 h-3 rounded-full bg-rose-500 inline-block"></span> Severe (&gt;50)</span>
-              </div>
-            )}
-          </div>
-          {scoradHistory.length === 0 ? (
-            <div className="h-40 flex flex-col items-center justify-center text-slate-400">
-              <TrendingUp className="h-8 w-8 mb-2 opacity-30" />
-              <p className="text-sm font-semibold">No PO-SCORAD data recorded yet.</p>
-            </div>
-          ) : (
-            <div className="h-56">
-              <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={scoradHistory} margin={{ top: 5, right: 20, left: 0, bottom: 5 }}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
-                  <XAxis dataKey="date" tick={{ fontSize: 11, fill: '#94a3b8', fontWeight: 600 }} tickLine={false} axisLine={false} />
-                  <YAxis domain={[0, 103]} tick={{ fontSize: 11, fill: '#94a3b8', fontWeight: 600 }} tickLine={false} axisLine={false} width={30} />
-                  <Tooltip
-                    contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 20px rgba(0,0,0,0.1)', fontSize: 13 }}
-                    formatter={(val) => [`${val}`, 'PO-SCORAD Score']}
-                  />
-                  <ReferenceLine y={25} stroke="#86efac" strokeDasharray="4 4" strokeWidth={1.5} />
-                  <ReferenceLine y={50} stroke="#fbbf24" strokeDasharray="4 4" strokeWidth={1.5} />
-                  <Line
-                    type="monotone"
-                    dataKey="score"
-                    stroke="#0D9488"
-                    strokeWidth={2.5}
-                    dot={(props) => {
-                      const { cx, cy, payload } = props;
-                      const color = payload.score > 50 ? '#ef4444' : payload.score > 25 ? '#f59e0b' : '#10b981';
-                      return <circle key={cx} cx={cx} cy={cy} r={5} fill={color} stroke="white" strokeWidth={2} />;
-                    }}
-                    activeDot={{ r: 7, stroke: '#0D9488', strokeWidth: 2 }}
-                  />
-                </LineChart>
-              </ResponsiveContainer>
-            </div>
-          )}
-        </div>
-
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 print-hide">
-
-          {/* Assign Action Item */}
-          <div className="bg-sky-50 p-6 rounded-2xl border border-sky-100">
-            <h3 className="text-lg font-bold text-sky-800 flex items-center gap-2 mb-4">
-              <CheckSquare className="h-5 w-5" /> Assign Action Item
-            </h3>
-            <p className="text-xs text-sky-600 mb-4">Send a task directly to the top of the patient's journal.</p>
-            <form onSubmit={handleAssignAction} className="flex gap-2">
-              <input
-                type="text"
-                placeholder="e.g. Apply steroid cream 2x daily"
-                className="input-dark flex-1 bg-white border-sky-200 focus:border-sky-500 text-slate-800 placeholder-slate-400"
-                value={newActionItem}
-                onChange={e => setNewActionItem(e.target.value)}
-              />
-              <button type="submit" disabled={!newActionItem.trim()} className="bg-sky-500 text-white px-4 py-2 rounded-xl hover:bg-sky-600 transition disabled:opacity-50">
-                <Send className="h-4 w-4" />
-              </button>
-            </form>
+        {/* ═══════════════════════════════════════════ */}
+        {/* TABBED INTERFACE */}
+        {/* ═══════════════════════════════════════════ */}
+        <div className="relative z-0 print:hidden mt-6 mb-6">
+          {/* Tab Toggle */}
+          <div className="flex flex-wrap items-end mb-0 relative z-10 px-4 gap-1">
+            <button
+              onClick={() => setActiveRecordTab("chart")}
+              className={`px-4 py-2.5 rounded-t-lg text-xs font-bold tracking-wide transition-all uppercase ${
+                activeRecordTab === "chart" ? "bg-blue-600 text-white" : "bg-slate-200/60 text-slate-500 hover:bg-slate-200"
+              }`}
+            >
+              PO-SCORAD CHART
+            </button>
+            <button
+              onClick={() => setActiveRecordTab("logs")}
+              className={`px-4 py-2.5 rounded-t-lg text-xs font-bold tracking-wide transition-all uppercase ${
+                activeRecordTab === "logs" ? "bg-[#0D9488] text-white" : "bg-slate-200/60 text-slate-500 hover:bg-slate-200"
+              }`}
+            >
+              PAST LOGS
+            </button>
+            <button
+              onClick={() => setActiveRecordTab("medical_record")}
+              className={`px-4 py-2.5 rounded-t-lg text-xs font-bold tracking-wide transition-all uppercase ${
+                activeRecordTab === "medical_record" ? "bg-indigo-500 text-white" : "bg-slate-200/60 text-slate-500 hover:bg-slate-200"
+              }`}
+            >
+              MEDICAL RECORD
+            </button>
+            <button
+              onClick={() => setActiveRecordTab("journal")}
+              className={`px-4 py-2.5 rounded-t-lg text-xs font-bold tracking-wide transition-all uppercase ${
+                activeRecordTab === "journal" ? "bg-sky-500 text-white" : "bg-slate-200/60 text-slate-500 hover:bg-slate-200"
+              }`}
+            >
+              PAST ENTRY JOURNAL
+            </button>
+            <button
+              onClick={() => setActiveRecordTab("appointment")}
+              className={`px-4 py-2.5 rounded-t-lg text-xs font-bold tracking-wide transition-all uppercase ${
+                activeRecordTab === "appointment" ? "bg-emerald-500 text-white" : "bg-slate-200/60 text-slate-500 hover:bg-slate-200"
+              }`}
+            >
+              SET APPOINTMENT
+            </button>
           </div>
 
-          {/* Create Official Medical Record */}
-          <div className="bg-indigo-50 p-6 rounded-2xl border border-indigo-100">
-            <h3 className="text-lg font-bold text-indigo-800 flex items-center gap-2 mb-4">
-              <Stethoscope className="h-5 w-5" /> Create Official Medical Record
-            </h3>
-            <p className="text-xs text-indigo-600 mb-4">Upload a post-consultation summary to the patient's file.</p>
-            <form onSubmit={handleCreateRecord} className="space-y-4">
-
-              <div>
-                <label className="text-xs font-bold text-indigo-800 uppercase mb-1 block">Patient-Facing Summary (Visible to Patient)</label>
-                <textarea
-                  rows={2} className="input-dark w-full bg-white border-indigo-200 text-sm text-slate-800 placeholder-slate-400"
-                  placeholder="Summary of consultation and instructions..."
-                  value={patientSummary} onChange={e => setPatientSummary(e.target.value)}
-                />
-              </div>
-
-              <div>
-                <label className="text-xs font-bold text-rose-800 uppercase mb-1 block">Private Clinical Notes (Hidden from Patient)</label>
-                <textarea
-                  rows={2} className="input-dark w-full bg-white border-rose-200 text-sm text-slate-800 placeholder-slate-400"
-                  placeholder="Private observations, differentials..."
-                  value={privateNotes} onChange={e => setPrivateNotes(e.target.value)}
-                />
-              </div>
-
-              <div>
-                <label className="text-xs font-bold text-indigo-800 uppercase mb-1 block">Prescriptions (Comma Separated)</label>
-                <input
-                  type="text" className="input-dark w-full bg-white border-indigo-200 text-sm text-slate-800 placeholder-slate-400"
-                  placeholder="e.g. Protopic 0.1%, Zyrtec 10mg"
-                  value={prescriptionsInput} onChange={e => setPrescriptionsInput(e.target.value)}
-                />
-              </div>
-
-              <div className="flex justify-end">
-                <button type="submit" disabled={!patientSummary.trim()} className="bg-indigo-600 text-white px-6 py-2 rounded-xl text-sm font-semibold hover:bg-indigo-700 transition disabled:opacity-50">
-                  Save Medical Record
-                </button>
-              </div>
-            </form>
-          </div>
-
-        </div>
-
-        {/* Set Future Appointment for Patient */}
-        <div className="bg-emerald-50 p-6 rounded-2xl border border-emerald-100 print-hide">
-          <h3 className="text-lg font-bold text-emerald-800 flex items-center gap-2 mb-2">
-            <CalendarPlus className="h-5 w-5" /> Set Future Appointment
-          </h3>
-          <p className="text-xs text-emerald-600 mb-4">Schedule a follow-up appointment for this patient. It will appear in their journal.</p>
-
-          {apptSuccess && (
-            <div className="flex items-center gap-2 p-3 rounded-xl mb-4 bg-emerald-100 border border-emerald-200 text-emerald-800 text-sm font-medium">
-              <CheckSquare className="h-4 w-4" /> Appointment set successfully!
-            </div>
-          )}
-          {apptError && (
-            <div className="p-3 rounded-xl mb-4 bg-red-50 border border-red-100 text-red-600 text-sm font-medium">{apptError}</div>
-          )}
-
-          <form onSubmit={handleSetAppointment} className="space-y-4">
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div>
-                <label className="text-xs font-bold text-emerald-800 uppercase mb-1 block">Date</label>
-                <input
-                  type="date"
-                  value={apptDate}
-                  min={getMinDate()}
-                  onChange={(e) => { setApptDate(e.target.value); setApptError(""); }}
-                  className="input-dark w-full bg-white border-emerald-200 text-slate-800 cursor-pointer"
-                />
-              </div>
-              <div>
-                <label className="text-xs font-bold text-emerald-800 uppercase mb-1 block">Reason</label>
-                <input
-                  type="text"
-                  placeholder="e.g. Follow-up consultation"
-                  value={apptReason}
-                  onChange={(e) => { setApptReason(e.target.value); setApptError(""); }}
-                  className="input-dark w-full bg-white border-emerald-200 text-sm text-slate-800 placeholder-slate-400"
-                />
-              </div>
-            </div>
-
-            {apptDate && (
-              <div>
-                <label className="text-xs font-bold text-emerald-800 uppercase mb-2 block">Time Slot</label>
-                {apptLoadingSlots ? (
-                  <p className="text-sm text-emerald-600">Checking availability...</p>
-                ) : (
-                  <div className="grid grid-cols-4 gap-2">
-                    {TIME_SLOTS.map((slot) => {
-                      const isBooked = apptBookedSlots.includes(slot);
-                      const isSelected = apptTimeSlot === slot;
-                      return (
-                        <button
-                          key={slot}
-                          type="button"
-                          disabled={isBooked}
-                          onClick={() => { setApptTimeSlot(slot); setApptError(""); }}
-                          className="py-2 px-2 rounded-xl text-sm font-medium transition-all duration-200"
-                          style={{
-                            background: isBooked ? "rgba(0,0,0,0.04)" : isSelected ? "linear-gradient(135deg, #059669, #10b981)" : "white",
-                            color: isBooked ? "#94a3b8" : isSelected ? "white" : "#334155",
-                            border: isBooked ? "1px solid rgba(0,0,0,0.06)" : isSelected ? "2px solid #059669" : "1px solid #d1d5db",
-                            cursor: isBooked ? "not-allowed" : "pointer",
-                            opacity: isBooked ? 0.5 : 1,
-                            textDecoration: isBooked ? "line-through" : "none",
-                          }}
-                        >
-                          {slot}
-                        </button>
-                      );
-                    })}
-                  </div>
-                )}
-              </div>
-            )}
-
-            <div className="flex justify-end">
-              <button type="submit" disabled={apptSubmitting || !apptDate || !apptTimeSlot || !apptReason.trim()} className="bg-emerald-600 text-white px-6 py-2 rounded-xl text-sm font-semibold hover:bg-emerald-700 transition disabled:opacity-50 flex items-center gap-2">
-                <CalendarPlus className="h-4 w-4" />
-                {apptSubmitting ? "Setting..." : "Set Appointment"}
-              </button>
-            </div>
-          </form>
-        </div>
-
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start print:block">
-          {/* Past Medical Records — Doctor Only */}
-          <div className="glass-strong p-6 flex flex-col h-[600px] print:h-auto print:break-before-page">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-semibold text-slate-800 flex items-center gap-2">
-                <ClipboardList className="h-5 w-5 text-indigo-500" /> Past Medical Records
-              </h3>
-              <div className="flex items-center gap-2 print-hide">
-                {recordDateFilter && (
-                  <button onClick={() => setRecordDateFilter("")} className="text-xs font-semibold text-indigo-500 hover:text-indigo-600 transition px-2.5 py-1 rounded-lg bg-indigo-50 border border-indigo-100">
-                    Show All
-                  </button>
-                )}
-                <div className="relative">
-                  <CalendarDays className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400 pointer-events-none" />
-                  <input
-                    type="date"
-                    value={recordDateFilter}
-                    onChange={(e) => setRecordDateFilter(e.target.value)}
-                    className="input-dark text-xs py-1.5 pl-8 pr-2 w-40 cursor-pointer bg-white"
-                    style={{ fontSize: '12px' }}
-                  />
-                </div>
-              </div>
-            </div>
+          {/* Tab Content Container */}
+          <div className="bg-white p-6 rounded-3xl rounded-tl-none shadow-sm border border-slate-100 relative group transition-all duration-500 min-h-[400px]">
             
-            <div className="overflow-y-auto flex-1 space-y-4 pr-2">
-              {medicalRecords.length === 0 ? (
-                <p className="text-slate-500">No medical records yet.</p>
-              ) : (() => {
-                const filtered = recordDateFilter
-                  ? medicalRecords.filter(r => {
-                      if (!r.createdAt) return false;
-                      const d = r.createdAt.toDate ? r.createdAt.toDate() : new Date(r.createdAt);
-                      return d.toISOString().split('T')[0] === recordDateFilter;
-                    })
-                  : medicalRecords;
-                return filtered.length === 0 ? (
-                  <div className="text-center py-8">
-                    <CalendarDays className="h-8 w-8 text-slate-300 mx-auto mb-2" />
-                    <p className="text-slate-500 text-sm">No records on this date.</p>
-                    <button onClick={() => setRecordDateFilter("")} className="text-indigo-500 text-xs hover:underline mt-1">Show all records</button>
-                  </div>
-                ) : filtered.map((rec) => (
-                  <div key={rec.id} className="bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
-                    <div className="flex justify-between items-center mb-3">
-                      <span className="text-sm font-semibold text-indigo-600 bg-indigo-50 px-3 py-1 rounded-full">
-                        {formatTime(rec.createdAt)}
-                      </span>
-                      <span className="text-xs text-slate-400">Dr. {rec.doctorName}</span>
-                    </div>
-                    <div className="space-y-3">
-                      <div>
-                        <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Patient Summary</p>
-                        <p className="text-sm text-slate-700 whitespace-pre-wrap">{rec.patientSummary}</p>
-                      </div>
-                      {rec.privateNotes && (
-                        <div className="bg-rose-50 p-3 rounded-lg border border-rose-100">
-                          <p className="text-xs font-bold text-rose-700 uppercase mb-1">Private Clinical Notes</p>
-                          <p className="text-sm text-rose-900 whitespace-pre-wrap">{rec.privateNotes}</p>
-                        </div>
-                      )}
-                      {rec.prescriptions && rec.prescriptions.length > 0 && (
-                        <div className="bg-emerald-50 p-3 rounded-lg border border-emerald-100">
-                          <p className="text-xs font-bold text-emerald-700 uppercase mb-1">Prescriptions</p>
-                          <p className="text-sm text-emerald-900">{rec.prescriptions.join(", ")}</p>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                ));
-              })()}
-            </div>
-          </div>
+            {activeRecordTab === "chart" && <ScoradTrendChart data={scoradHistory} />}
+            
+            {activeRecordTab === "logs" && <PastProgressLogs progressData={fullProgressLogs} />}
 
-          {/* Patient Journal (Now shows Emotions and Food) */}
-          <div className="glass-strong p-6 flex flex-col h-[600px] print:h-auto print:break-before-page">
-            <h3 className="text-lg font-semibold text-slate-800 flex items-center gap-2 mb-4">
-              <FileText className="h-5 w-5 text-sky-500" /> Patient Journal & Diet Log
-            </h3>
-            <div className="overflow-y-auto flex-1 space-y-4 pr-2">
-              {journalEntries.length === 0 ? (
-                <p className="text-slate-500">No journal entries.</p>
-              ) : journalEntries.map((j) => (
-                <div key={j.id} className="bg-white p-5 rounded-xl border border-slate-200 shadow-sm print:shadow-none">
-                  <div className="flex justify-between items-center mb-3">
-                    <span className="text-sm font-semibold text-sky-600 bg-sky-50 px-3 py-1 rounded-full">
-                      {formatTime(j.createdAt || j.date)}
-                    </span>
-                    {j.emotion && (
-                      <span className="text-xs font-bold px-3 py-1 rounded-full bg-slate-100 text-slate-600 uppercase">
-                        Emotion: {j.emotion}
-                      </span>
-                    )}
-                  </div>
-                  <p className="text-slate-700 whitespace-pre-wrap">{j.entry}</p>
-
-                  {j.foodLog && (
-                    <div className="mt-4 p-3 bg-amber-50 rounded-lg border border-amber-100">
-                      <p className="text-xs font-bold text-amber-800 uppercase mb-1">Food Log</p>
-                      <p className="text-sm text-amber-900">{j.foodLog}</p>
+            {activeRecordTab === "medical_record" && (
+              <div className="flex flex-col gap-6 animate-fade-in">
+                {/* Create Official Medical Record */}
+                <div className="bg-indigo-50 p-6 rounded-2xl border border-indigo-100">
+                  <h3 className="text-lg font-bold text-indigo-800 flex items-center gap-2 mb-4">
+                    <Stethoscope className="h-5 w-5" /> Create Official Medical Record
+                  </h3>
+                  <p className="text-xs text-indigo-600 mb-4">Upload a post-consultation summary to the patient's file.</p>
+                  <form onSubmit={handleCreateRecord} className="space-y-4">
+                    <div>
+                      <label className="text-xs font-bold text-indigo-800 uppercase mb-1 block">Patient-Facing Summary (Visible to Patient)</label>
+                      <textarea
+                        rows={2} className="input-dark w-full bg-white border-indigo-200 text-sm text-slate-800 placeholder-slate-400"
+                        placeholder="Summary of consultation and instructions..."
+                        value={patientSummary} onChange={e => setPatientSummary(e.target.value)}
+                      />
                     </div>
-                  )}
+                    <div>
+                      <label className="text-xs font-bold text-rose-800 uppercase mb-1 block">Private Clinical Notes (Hidden from Patient)</label>
+                      <textarea
+                        rows={2} className="input-dark w-full bg-white border-rose-200 text-sm text-slate-800 placeholder-slate-400"
+                        placeholder="Private observations, differentials..."
+                        value={privateNotes} onChange={e => setPrivateNotes(e.target.value)}
+                      />
+                    </div>
+                    <div>
+                      <label className="text-xs font-bold text-indigo-800 uppercase mb-1 block">Prescriptions (Comma Separated)</label>
+                      <input
+                        type="text" className="input-dark w-full bg-white border-indigo-200 text-sm text-slate-800 placeholder-slate-400"
+                        placeholder="e.g. Protopic 0.1%, Zyrtec 10mg"
+                        value={prescriptionsInput} onChange={e => setPrescriptionsInput(e.target.value)}
+                      />
+                    </div>
+                    <div className="flex justify-end">
+                      <button type="submit" disabled={!patientSummary.trim()} className="bg-indigo-600 text-white px-6 py-2 rounded-xl text-sm font-semibold hover:bg-indigo-700 transition disabled:opacity-50">
+                        Save Medical Record
+                      </button>
+                    </div>
+                  </form>
                 </div>
-              ))}
-            </div>
+
+                {/* Past Medical Records */}
+                <div className="glass-strong p-6 flex flex-col min-h-[400px]">
+                  <div className="flex items-center justify-between mb-4">
+                    <h3 className="text-lg font-semibold text-slate-800 flex items-center gap-2">
+                      <ClipboardList className="h-5 w-5 text-indigo-500" /> Past Medical Records
+                    </h3>
+                    <div className="flex items-center gap-2">
+                      {recordDateFilter && (
+                        <button onClick={() => setRecordDateFilter("")} className="text-xs font-semibold text-indigo-500 hover:text-indigo-600 transition px-2.5 py-1 rounded-lg bg-indigo-50 border border-indigo-100">
+                          Show All
+                        </button>
+                      )}
+                      <div className="relative">
+                        <CalendarDays className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400 pointer-events-none" />
+                        <input
+                          type="date"
+                          value={recordDateFilter}
+                          onChange={(e) => setRecordDateFilter(e.target.value)}
+                          className="input-dark text-xs py-1.5 pl-8 pr-2 w-40 cursor-pointer bg-white"
+                          style={{ fontSize: '12px' }}
+                        />
+                      </div>
+                    </div>
+                  </div>
+                  <div className="overflow-y-auto flex-1 space-y-4 pr-2">
+                    {medicalRecords.length === 0 ? (
+                      <p className="text-slate-500">No medical records yet.</p>
+                    ) : (() => {
+                      const filtered = recordDateFilter
+                        ? medicalRecords.filter(r => {
+                            if (!r.createdAt) return false;
+                            const d = r.createdAt.toDate ? r.createdAt.toDate() : new Date(r.createdAt);
+                            return d.toISOString().split('T')[0] === recordDateFilter;
+                          })
+                        : medicalRecords;
+                      return filtered.length === 0 ? (
+                        <div className="text-center py-8">
+                          <CalendarDays className="h-8 w-8 text-slate-300 mx-auto mb-2" />
+                          <p className="text-slate-500 text-sm">No records on this date.</p>
+                          <button onClick={() => setRecordDateFilter("")} className="text-indigo-500 text-xs hover:underline mt-1">Show all records</button>
+                        </div>
+                      ) : filtered.map((rec) => (
+                        <div key={rec.id} className="bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
+                          <div className="flex justify-between items-center mb-3">
+                            <span className="text-sm font-semibold text-indigo-600 bg-indigo-50 px-3 py-1 rounded-full">
+                              {formatTime(rec.createdAt)}
+                            </span>
+                            <span className="text-xs text-slate-400">Dr. {rec.doctorName}</span>
+                          </div>
+                          <div className="space-y-3">
+                            <div>
+                              <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Patient Summary</p>
+                              <p className="text-sm text-slate-700 whitespace-pre-wrap">{rec.patientSummary}</p>
+                            </div>
+                            {rec.privateNotes && (
+                              <div className="bg-rose-50 p-3 rounded-lg border border-rose-100">
+                                <p className="text-xs font-bold text-rose-700 uppercase mb-1">Private Clinical Notes</p>
+                                <p className="text-sm text-rose-900 whitespace-pre-wrap">{rec.privateNotes}</p>
+                              </div>
+                            )}
+                            {rec.prescriptions && rec.prescriptions.length > 0 && (
+                              <div className="bg-emerald-50 p-3 rounded-lg border border-emerald-100">
+                                <p className="text-xs font-bold text-emerald-700 uppercase mb-1">Prescriptions</p>
+                                <p className="text-sm text-emerald-900">{rec.prescriptions.join(", ")}</p>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      ));
+                    })()}
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {activeRecordTab === "journal" && (
+              <div className="flex flex-col gap-6 animate-fade-in">
+                {/* Assign Action Item */}
+                <div className="bg-sky-50 p-6 rounded-2xl border border-sky-100">
+                  <h3 className="text-lg font-bold text-sky-800 flex items-center gap-2 mb-4">
+                    <CheckSquare className="h-5 w-5" /> Assign Action Item
+                  </h3>
+                  <p className="text-xs text-sky-600 mb-4">Send a task directly to the top of the patient's journal.</p>
+                  <form onSubmit={handleAssignAction} className="flex gap-2">
+                    <input
+                      type="text"
+                      placeholder="e.g. Apply steroid cream 2x daily"
+                      className="input-dark flex-1 bg-white border-sky-200 focus:border-sky-500 text-slate-800 placeholder-slate-400"
+                      value={newActionItem}
+                      onChange={e => setNewActionItem(e.target.value)}
+                    />
+                    <button type="submit" disabled={!newActionItem.trim()} className="bg-sky-500 text-white px-4 py-2 rounded-xl hover:bg-sky-600 transition disabled:opacity-50">
+                      <Send className="h-4 w-4" />
+                    </button>
+                  </form>
+                </div>
+
+                {/* Patient Journal */}
+                <div className="glass-strong p-6 flex flex-col h-[600px]">
+                  <div className="flex items-center justify-between mb-4">
+                    <h3 className="text-lg font-semibold text-slate-800 flex items-center gap-2">
+                      <FileText className="h-5 w-5 text-sky-500" /> Patient Journal & Diet Log
+                    </h3>
+                    <div className="flex items-center gap-2">
+                      {journalDateFilter && (
+                        <button onClick={() => setJournalDateFilter("")} className="text-xs font-semibold text-sky-500 hover:text-sky-600 transition px-2.5 py-1 rounded-lg bg-sky-50 border border-sky-100">
+                          Show All
+                        </button>
+                      )}
+                      <div className="relative">
+                        <CalendarDays className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400 pointer-events-none" />
+                        <input
+                          type="date"
+                          value={journalDateFilter}
+                          onChange={(e) => setJournalDateFilter(e.target.value)}
+                          className="input-dark text-xs py-1.5 pl-8 pr-2 w-40 cursor-pointer bg-white"
+                          style={{ fontSize: '12px' }}
+                        />
+                      </div>
+                    </div>
+                  </div>
+                  <div className="overflow-y-auto flex-1 space-y-4 pr-2">
+                    {journalEntries.length === 0 ? (
+                      <p className="text-slate-500">No journal entries yet.</p>
+                    ) : (() => {
+                      const filteredJournal = journalDateFilter
+                        ? journalEntries.filter(j => {
+                            if (!j.createdAt && !j.date) return false;
+                            const dt = j.createdAt?.toDate ? j.createdAt.toDate() : new Date(j.createdAt || j.date);
+                            return dt.toISOString().split('T')[0] === journalDateFilter;
+                          })
+                        : journalEntries;
+                      return filteredJournal.length === 0 ? (
+                        <div className="text-center py-8">
+                          <CalendarDays className="h-8 w-8 text-slate-300 mx-auto mb-2" />
+                          <p className="text-slate-500 text-sm">No journal entries on this date.</p>
+                          <button onClick={() => setJournalDateFilter("")} className="text-sky-500 text-xs hover:underline mt-1">Show all entries</button>
+                        </div>
+                      ) : filteredJournal.map((j) => (
+                        <div key={j.id} className="bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
+                          <div className="flex justify-between items-center mb-3">
+                            <span className="text-sm font-semibold text-sky-600 bg-sky-50 px-3 py-1 rounded-full">
+                              {formatTime(j.createdAt || j.date)}
+                            </span>
+                            {j.emotion && (
+                              <span className="text-xs font-bold px-3 py-1 rounded-full bg-slate-100 text-slate-600 uppercase">
+                                Emotion: {j.emotion}
+                              </span>
+                            )}
+                          </div>
+                          <p className="text-slate-700 whitespace-pre-wrap">{j.entry}</p>
+                          {j.foodLog && (
+                            <div className="mt-4 p-3 bg-amber-50 rounded-lg border border-amber-100">
+                              <p className="text-xs font-bold text-amber-800 uppercase mb-1">Food Log</p>
+                              <p className="text-sm text-amber-900">{j.foodLog}</p>
+                            </div>
+                          )}
+                        </div>
+                      ));
+                    })()}
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {activeRecordTab === "appointment" && (
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 animate-fade-in">
+                {/* Left side: Set Future Appointment */}
+                <div className="bg-emerald-50 p-6 rounded-2xl border border-emerald-100 flex flex-col h-[600px]">
+                  <h3 className="text-lg font-bold text-emerald-800 flex items-center gap-2 mb-2">
+                    <CalendarPlus className="h-5 w-5" /> Set Future Appointment
+                  </h3>
+                  <p className="text-xs text-emerald-600 mb-4">Schedule a follow-up appointment for this patient. It will appear in their journal.</p>
+
+                  <div className="overflow-y-auto flex-1 pr-2">
+                    {apptSuccess && (
+                      <div className="flex items-center gap-2 p-3 rounded-xl mb-4 bg-emerald-100 border border-emerald-200 text-emerald-800 text-sm font-medium">
+                        <CheckSquare className="h-4 w-4" /> Appointment set successfully!
+                      </div>
+                    )}
+                    {apptError && (
+                      <div className="p-3 rounded-xl mb-4 bg-red-50 border border-red-100 text-red-600 text-sm font-medium">{apptError}</div>
+                    )}
+
+                    <form onSubmit={handleSetAppointment} className="space-y-4">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div>
+                          <label className="text-xs font-bold text-emerald-800 uppercase mb-1 block">Date</label>
+                          <input
+                            type="date"
+                            value={apptDate}
+                            min={getMinDate()}
+                            onChange={(e) => { setApptDate(e.target.value); setApptError(""); }}
+                            className="input-dark w-full bg-white border-emerald-200 text-slate-800 cursor-pointer"
+                          />
+                        </div>
+                        <div>
+                          <label className="text-xs font-bold text-emerald-800 uppercase mb-1 block">Reason</label>
+                          <input
+                            type="text"
+                            placeholder="e.g. Follow-up consultation"
+                            value={apptReason}
+                            onChange={(e) => { setApptReason(e.target.value); setApptError(""); }}
+                            className="input-dark w-full bg-white border-emerald-200 text-sm text-slate-800 placeholder-slate-400"
+                          />
+                        </div>
+                      </div>
+
+                      {apptDate && (
+                        <div>
+                          <label className="text-xs font-bold text-emerald-800 uppercase mb-2 block">Time Slot</label>
+                          {apptLoadingSlots ? (
+                            <p className="text-sm text-emerald-600">Checking availability...</p>
+                          ) : (
+                            <div className="grid grid-cols-4 gap-2">
+                              {TIME_SLOTS.map((slot) => {
+                                const isBooked = apptBookedSlots.includes(slot);
+                                const isSelected = apptTimeSlot === slot;
+                                return (
+                                  <button
+                                    key={slot}
+                                    type="button"
+                                    disabled={isBooked}
+                                    onClick={() => { setApptTimeSlot(slot); setApptError(""); }}
+                                    className="py-2 px-2 rounded-xl text-sm font-medium transition-all duration-200"
+                                    style={{
+                                      background: isBooked ? "rgba(0,0,0,0.04)" : isSelected ? "linear-gradient(135deg, #059669, #10b981)" : "white",
+                                      color: isBooked ? "#94a3b8" : isSelected ? "white" : "#334155",
+                                      border: isBooked ? "1px solid rgba(0,0,0,0.06)" : isSelected ? "2px solid #059669" : "1px solid #d1d5db",
+                                      cursor: isBooked ? "not-allowed" : "pointer",
+                                      opacity: isBooked ? 0.5 : 1,
+                                      textDecoration: isBooked ? "line-through" : "none",
+                                    }}
+                                  >
+                                    {slot}
+                                  </button>
+                                );
+                              })}
+                            </div>
+                          )}
+                        </div>
+                      )}
+
+                      <div className="flex justify-end pt-2">
+                        <button type="submit" disabled={apptSubmitting || !apptDate || !apptTimeSlot || !apptReason.trim()} className="bg-emerald-600 text-white px-6 py-2 rounded-xl text-sm font-semibold hover:bg-emerald-700 transition disabled:opacity-50 flex items-center gap-2">
+                          <CalendarPlus className="h-4 w-4" />
+                          {apptSubmitting ? "Setting..." : "Set Appointment"}
+                        </button>
+                      </div>
+                    </form>
+                  </div>
+                </div>
+
+                {/* Right side: Scheduled Appointments */}
+                <div className="glass-strong p-6 flex flex-col h-[600px]">
+                  <h3 className="text-lg font-semibold text-slate-800 flex items-center justify-between gap-2 mb-4">
+                    <div className="flex items-center gap-2">
+                      <CalendarDays className="h-5 w-5 text-emerald-500" /> Scheduled Appointments
+                    </div>
+                    {apptDateFilter && (
+                      <button onClick={() => setApptDateFilter(null)} className="text-xs font-semibold text-emerald-500 hover:text-emerald-600 transition px-2.5 py-1 rounded-lg bg-emerald-50 border border-emerald-100">
+                        Show All
+                      </button>
+                    )}
+                  </h3>
+
+                  <div className="mb-4 bg-white rounded-xl border border-slate-200 p-2 shadow-sm text-sm overflow-hidden" style={{ minHeight: '300px' }}>
+                    <ReactCalendar
+                      onChange={setApptDateFilter}
+                      value={apptDateFilter}
+                      className="border-0 w-full"
+                      tileContent={({ date, view }) => {
+                        if (view === 'month') {
+                          const dtStr = date.toLocaleDateString("en-CA"); // YYYY-MM-DD local
+                          const hasAppt = upcomingAppointments.some(a => {
+                            if (a.status === "cancelled" || a.status === "rejected") return false;
+                            const aDt = a.date?.toDate ? a.date.toDate() : new Date(a.date);
+                            return aDt.toLocaleDateString("en-CA") === dtStr;
+                          });
+                          if (hasAppt) {
+                            return <div className="flex justify-center mt-1"><div className="h-1.5 w-1.5 rounded-full bg-emerald-500"></div></div>;
+                          }
+                        }
+                        return null;
+                      }}
+                    />
+                  </div>
+
+                  <div className="overflow-y-auto flex-1 space-y-4 pr-2">
+                    {(() => {
+                      const filtered = apptDateFilter 
+                        ? upcomingAppointments.filter(a => {
+                            const aDt = a.date?.toDate ? a.date.toDate() : new Date(a.date);
+                            return aDt.toLocaleDateString("en-CA") === apptDateFilter.toLocaleDateString("en-CA");
+                          })
+                        : upcomingAppointments;
+
+                      if (filtered.length === 0) {
+                        return (
+                          <div className="text-center py-8">
+                            <CalendarDays className="h-10 w-10 text-slate-300 mx-auto mb-3" />
+                            <p className="text-slate-500 text-sm font-medium">No appointments found.</p>
+                          </div>
+                        );
+                      }
+
+                      return filtered.map(appt => {
+                        const dt = appt.date?.toDate ? appt.date.toDate() : new Date(appt.date);
+                        const isCompleted = appt.status === "completed";
+                        return (
+                          <div key={appt.id} className={`bg-white p-5 rounded-xl border ${isCompleted ? 'border-emerald-200 bg-emerald-50/30' : 'border-slate-200'} shadow-sm flex flex-col gap-2 relative overflow-hidden group`}>
+                            <div className={`absolute top-0 left-0 w-1.5 h-full ${isCompleted ? 'bg-slate-300' : 'bg-emerald-500'}`}></div>
+                            <div className="flex items-center justify-between">
+                              <span className={`text-sm font-bold px-3 py-1 rounded-lg border ${isCompleted ? 'bg-slate-100 text-slate-500 border-slate-200' : 'text-slate-800 bg-emerald-50 border-emerald-100'}`}>
+                                {dt.toLocaleDateString("en-MY", { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' })}
+                              </span>
+                              <span className="text-xs font-bold bg-slate-100 text-slate-600 px-3 py-1 rounded-lg border border-slate-200">
+                                {appt.timeSlot}
+                              </span>
+                            </div>
+                            <div>
+                              <p className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-0.5 mt-2">Reason</p>
+                              <p className="text-sm text-slate-700 font-medium">{appt.reason}</p>
+                            </div>
+                            
+                            {/* Actions / Status */}
+                            <div className="mt-3 flex justify-end">
+                              {isCompleted ? (
+                                <span className="flex items-center gap-1.5 text-xs font-bold text-emerald-600 bg-emerald-100 px-3 py-1.5 rounded-lg border border-emerald-200">
+                                  <CheckCircle className="w-3.5 h-3.5" /> Completed
+                                </span>
+                              ) : (
+                                <button 
+                                  onClick={() => handleCompleteAppointment(appt.id)}
+                                  className="flex items-center gap-1.5 text-xs font-bold text-white bg-emerald-500 hover:bg-emerald-600 px-3 py-1.5 rounded-lg transition-colors"
+                                >
+                                  <CheckSquare className="w-3.5 h-3.5" /> Mark Complete
+                                </button>
+                              )}
+                            </div>
+                          </div>
+                        )
+                      });
+                    })()}
+                  </div>
+                </div>
+              </div>
+            )}
+
           </div>
         </div>
 

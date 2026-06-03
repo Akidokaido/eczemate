@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo } from "react";
+import { createPortal } from "react-dom";
 import { X, ChevronLeft, ChevronRight } from "lucide-react";
 
 const DAYS_OF_WEEK = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
@@ -158,15 +159,15 @@ const CustomDatePickerModal = ({ isOpen, onClose, onSelect, initialMode = 'week'
 
       days.push(
         <div key={i} className="relative h-10 w-10 flex items-center justify-center p-0.5">
-           <button
-             onClick={() => handleDateClick(currentDate)}
-             className={`w-full h-full flex flex-col items-center justify-center transition-all ${bgClass} ${textClass} ${roundedClass}`}
-           >
-             <span className="text-sm">{i}</span>
-             {severity && (
-               <span className={`w-1 h-1 rounded-full mt-0.5 absolute bottom-1.5 ${severity === 'severe' ? 'bg-rose-500' : severity === 'moderate' ? 'bg-amber-500' : 'bg-emerald-500'}`}></span>
-             )}
-           </button>
+          <button
+            onClick={() => handleDateClick(currentDate)}
+            className={`h-full w-full flex flex-col items-center justify-center transition-all ${bgClass} ${textClass} ${roundedClass} z-10`}
+          >
+            <span className="text-sm">{i}</span>
+            {severity && (
+              <span className={`w-1 h-1 rounded-full mt-0.5 absolute bottom-1.5 ${severity === 'severe' ? 'bg-rose-500' : severity === 'moderate' ? 'bg-amber-500' : 'bg-emerald-500'}`}></span>
+            )}
+          </button>
         </div>
       );
     }
@@ -191,9 +192,10 @@ const CustomDatePickerModal = ({ isOpen, onClose, onSelect, initialMode = 'week'
     rightMonth = 0;
     rightYear++;
   }
+   if (!isOpen) return null;
 
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-sm p-4 animate-in fade-in duration-200">
+  return createPortal(
+    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/40 backdrop-blur-sm p-4 animate-in fade-in duration-200">
       <div className="bg-white rounded-3xl shadow-xl w-full max-w-3xl overflow-hidden animate-in zoom-in-95 duration-200">
         
         {/* Header */}
@@ -261,7 +263,8 @@ const CustomDatePickerModal = ({ isOpen, onClose, onSelect, initialMode = 'week'
           </div>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 };
 

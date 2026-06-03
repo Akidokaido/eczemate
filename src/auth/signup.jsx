@@ -35,18 +35,12 @@ const Signup = () => {
       }
 
       // Write to role-based subcollection: users/{role}/accounts/{uid}
-      await setDoc(getUserDocRef(role, cred.user.uid), userData);
-
       if (role === "doctor") {
-        await setDoc(doc(firestore, "doctors", cred.user.uid), {
-          name,
-          email: cred.user.email,
-          specialty: "",
-          clinicInfo: null,
-          availability: [],
-          createdAt: new Date(),
-        }, { merge: true });
+        userData.specialty = "";
+        userData.clinicInfo = null;
+        userData.availability = [];
       }
+      await setDoc(getUserDocRef(role, cred.user.uid), userData);
 
       if (role === "doctor") {
         // Sign out immediately — they can't use the app until approved

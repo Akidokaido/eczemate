@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { createPortal } from "react-dom";
 import { X, UploadCloud, Image as ImageIcon } from "lucide-react";
 
 export default function PhotoUploadModal({ isOpen, onClose, partId, partLabel, onUpload, existingPhoto }) {
@@ -37,8 +38,8 @@ export default function PhotoUploadModal({ isOpen, onClose, partId, partLabel, o
     setDragActive(false);
   };
 
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-fade-in">
+  return createPortal(
+    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-fade-in">
       <div className="bg-white rounded-3xl shadow-2xl w-full max-w-md overflow-hidden animate-fade-in-up">
         {/* Header */}
         <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between bg-slate-50">
@@ -108,6 +109,7 @@ export default function PhotoUploadModal({ isOpen, onClose, partId, partLabel, o
           )}
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }

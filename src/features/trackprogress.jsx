@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { Hand, Droplet, Moon, Activity, Flame, Apple, Pill, Plus, X, CheckCircle, Edit3, ChevronDown, HelpCircle, Sparkles, MessageSquare, Calendar, AlertTriangle, Heart, Shield, Sun, User, Clock, ChevronRight, Zap } from "lucide-react";
 import { db } from "../firebase/config";
-import { collection, addDoc, query, where, getDocs, doc, updateDoc } from "firebase/firestore";
+import { collection, addDoc, query, where, getDocs, doc, updateDoc, getDoc } from "firebase/firestore";
 import { getAuth } from "firebase/auth";
 import BodyMap from "../components/shared/BodyMap";
 
@@ -255,6 +255,7 @@ export default function TrackProgress({ setActiveSection }) {
   const [newTrigger, setNewTrigger] = useState("");
   const [newFood, setNewFood] = useState("");
 
+  const [savedMedications, setSavedMedications] = useState([]);
   const [medications, setMedications] = useState([]);
   const [newMedName, setNewMedName] = useState("");
   const [newMedDosage, setNewMedDosage] = useState("");
@@ -275,26 +276,62 @@ export default function TrackProgress({ setActiveSection }) {
   const [checkingSubmission, setCheckingSubmission] = useState(true);
 
   const toggle = (item, list, setList) => setList(list.includes(item) ? list.filter(i => i !== item) : [...list, item]);
-  const addCustom = (value, list, setList, reset) => {
-    if (!value.trim()) return;
-    if (!list.includes(value)) setList([...list, value]);
-    reset("");
+  const updateSavedToFirestore = async (field, newArray) => {
+    const user = getAuth().currentUser;
+    if (user) {
+      await updateDoc(doc(db, "users", "patients", "accounts", user.uid), {
+        [field]: newArray
+      }).catch(err => console.error("Error saving:", err));
+    }
+  };
+
+  const addCustom = (val, list, setList, setInput, field) => {
+    if (val.trim() && !list.includes(val) && !defaultTriggers.includes(val) && !defaultFoods.includes(val)) {
+      const newList = [...list, val.trim()];
+      setList(newList);
+      setInput("");
+      updateSavedToFirestore(field, newList);
+    }
+  };
+
+  const removeCustom = (val, list, setList, field) => {
+    const newList = list.filter(x => x !== val);
+    setList(newList);
+    updateSavedToFirestore(field, newList);
   };
 
   const handleAddMedication = () => {
     if (!newMedName.trim()) return;
-    setMedications([...medications, {
+    const newMed = {
       id: Date.now().toString(),
       name: newMedName.trim(),
       dosage: newMedDosage.trim(),
       frequency: newMedFreq.trim(),
       status: newMedStatus
-    }]);
-    setNewMedName(""); setNewMedDosage(""); setNewMedFreq(""); setNewMedStatus("ongoing");
+    };
+    const newList = [...savedMedications, newMed];
+    setSavedMedications(newList);
+    setMedications([...medications, newMed]);
+    setNewMedName("");
+    setNewMedDosage("");
+    setNewMedFreq("");
+    setNewMedStatus("ongoing");
+    updateSavedToFirestore("savedMedications", newList);
   };
 
-  const removeMedication = (id) => {
+  const removeSavedMedication = (id) => {
+    const newList = savedMedications.filter(m => m.id !== id);
+    setSavedMedications(newList);
     setMedications(medications.filter(m => m.id !== id));
+    updateSavedToFirestore("savedMedications", newList);
+  };
+
+  const toggleMedicationActive = (med) => {
+    if (medications.some(m => m.id === med.id)) {
+      setMedications(medications.filter(m => m.id !== med.id));
+    } else {
+      setMedications([...medications, med]);
+    }
   };
 
   const populateFromDoc = (data) => {
@@ -322,6 +359,15 @@ export default function TrackProgress({ setActiveSection }) {
       const user = getAuth().currentUser;
       if (!user) { setCheckingSubmission(false); return; }
       try {
+        // Fetch saved lists from user profile
+        const userDoc = await getDoc(doc(db, "users", "patients", "accounts", user.uid));
+        if (userDoc.exists()) {
+          const ud = userDoc.data();
+          if (ud.savedEnvTriggers) setCustomTriggers(ud.savedEnvTriggers);
+          if (ud.savedFoodTriggers) setCustomFoods(ud.savedFoodTriggers);
+          if (ud.savedMedications) setSavedMedications(ud.savedMedications);
+        }
+
         const q = query(collection(db, "users", "patients", "accounts", user.uid, "trackProgress"), where("dateKey", "==", todayKey()));
         const snap = await getDocs(q);
         if (!snap.empty) {
@@ -667,19 +713,19 @@ export default function TrackProgress({ setActiveSection }) {
         <CollapsibleSection title="4. Triggers" icon={<Flame className="text-orange-500" />} defaultOpen={false}>
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-4">
             {[ 
-              { title: "Environmental", icon: <Flame size={16}/>, items: defaultTriggers, active: activeTriggers, setActive: setActiveTriggers, custom: customTriggers, setCustom: setCustomTriggers, input: newTrigger, setInput: setNewTrigger, color: "orange" },
-              { title: "Dietary", icon: <Apple size={16}/>, items: defaultFoods, active: activeFoods, setActive: setActiveFoods, custom: customFoods, setCustom: setCustomFoods, input: newFood, setInput: setNewFood, color: "emerald" }
+              { title: "Environmental", icon: <Flame size={16}/>, items: defaultTriggers, active: activeTriggers, setActive: setActiveTriggers, custom: customTriggers, setCustom: setCustomTriggers, input: newTrigger, setInput: setNewTrigger, color: "orange", field: "savedEnvTriggers" },
+              { title: "Dietary", icon: <Apple size={16}/>, items: defaultFoods, active: activeFoods, setActive: setActiveFoods, custom: customFoods, setCustom: setCustomFoods, input: newFood, setInput: setNewFood, color: "emerald", field: "savedFoodTriggers" }
             ].map((section) => (
               <div key={section.title} className="bg-white border border-slate-200 rounded-2xl shadow-sm">
                 <div className={`bg-${section.color}-50 text-${section.color}-600 px-5 py-3 font-bold flex items-center gap-2 border-b border-${section.color}-100 rounded-t-2xl`}>{section.icon} {section.title}</div>
                 <div className="p-5 space-y-4">
                   <div className="flex flex-wrap gap-2">
                     {section.items.map((i) => <Chip key={i} label={i} active={section.active.includes(i)} onClick={() => toggle(i, section.active, section.setActive)} />)}
-                    {section.custom.map((i) => <Chip key={i} label={i} active={section.active.includes(i)} removable onClick={() => toggle(i, section.active, section.setActive)} onRemove={() => section.setCustom(section.custom.filter(x => x !== i))} />)}
+                    {section.custom.map((i) => <Chip key={i} label={i} active={section.active.includes(i)} removable onClick={() => toggle(i, section.active, section.setActive)} onRemove={() => removeCustom(i, section.custom, section.setCustom, section.field)} />)}
                   </div>
                   <div className="flex gap-2">
                     <input value={section.input} onChange={(e) => section.setInput(e.target.value)} placeholder="Add custom trigger..." className="flex-1 bg-slate-50 border border-slate-200 rounded-xl px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-sky-100" />
-                    <button onClick={() => addCustom(section.input, section.custom, section.setCustom, section.setInput)} className="bg-slate-800 text-white px-4 rounded-xl hover:bg-slate-700 transition"><Plus size={16} /></button>
+                    <button onClick={() => addCustom(section.input, section.custom, section.setCustom, section.setInput, section.field)} className="bg-slate-800 text-white px-4 rounded-xl hover:bg-slate-700 transition"><Plus size={16} /></button>
                   </div>
                 </div>
               </div>
@@ -689,16 +735,23 @@ export default function TrackProgress({ setActiveSection }) {
 
         <CollapsibleSection title="5. Medications" icon={<Pill className="text-indigo-500" />} defaultOpen={false}>
           <div className="bg-white border border-slate-200 rounded-2xl shadow-sm p-6 mt-4">
-            {medications.length > 0 && (
+            <p className="text-sm text-slate-500 mb-4">Tap a medication to mark it as taken today. Click the X to permanently delete it from your saved list.</p>
+            {savedMedications.length > 0 && (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-6">
-                {medications.map(med => (
-                  <div key={med.id} className="bg-slate-50 border border-slate-200 rounded-xl p-4 relative group">
-                    <button onClick={() => removeMedication(med.id)} className="absolute top-2 right-2 text-slate-400 hover:text-red-500 opacity-0 group-hover:opacity-100 transition"><X size={16}/></button>
-                    <p className="font-bold text-slate-800">{med.name}</p>
-                    <p className="text-xs text-slate-500 mt-1">{med.dosage || "No dosage"} • {med.frequency || "No frequency"}</p>
-                    <span className={`inline-block mt-2 text-[10px] font-bold px-2 py-1 rounded-md uppercase ${med.status === 'ongoing' ? 'bg-emerald-100 text-emerald-600' : 'bg-slate-200 text-slate-600'}`}>{med.status}</span>
-                  </div>
-                ))}
+                {savedMedications.map(med => {
+                  const isActive = medications.some(m => m.id === med.id);
+                  return (
+                    <div key={med.id} onClick={() => toggleMedicationActive(med)} className={`cursor-pointer border rounded-xl p-4 relative group transition-all ${isActive ? 'bg-indigo-50 border-indigo-200 shadow-sm' : 'bg-slate-50 border-slate-200 hover:bg-slate-100'}`}>
+                      <button onClick={(e) => { e.stopPropagation(); removeSavedMedication(med.id); }} className="absolute top-2 right-2 text-slate-400 hover:text-red-500 opacity-0 group-hover:opacity-100 transition"><X size={16}/></button>
+                      <div className="flex items-center justify-between mb-1">
+                        <p className={`font-bold ${isActive ? 'text-indigo-900' : 'text-slate-700'}`}>{med.name}</p>
+                        {isActive && <CheckCircle size={16} className="text-indigo-500" />}
+                      </div>
+                      <p className="text-xs text-slate-500 mt-1">{med.dosage || "No dosage"} • {med.frequency || "No frequency"}</p>
+                      <span className={`inline-block mt-2 text-[10px] font-bold px-2 py-1 rounded-md uppercase ${med.status === 'ongoing' ? 'bg-emerald-100 text-emerald-600' : 'bg-slate-200 text-slate-600'}`}>{med.status}</span>
+                    </div>
+                  );
+                })}
               </div>
             )}
             

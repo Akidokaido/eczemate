@@ -9,6 +9,7 @@ import ActionItemsSection from "./journal/components/ActionItemsSection";
 import AppointmentSection from "./journal/components/AppointmentSection";
 import PastEntriesSection from "./journal/components/PastEntriesSection";
 import CancelApptModal from "./journal/components/CancelApptModal";
+import PastProgressLogs from "./journal/components/PastProgressLogs";
 
 const PageLoader = () => (
   <div className="flex flex-col items-center justify-center min-h-screen bg-[#FDFBF7] gap-4">
@@ -34,6 +35,8 @@ const Journal = () => {
   const [foodLog, setFoodLog] = useState("");
   const [selectedDate, setSelectedDate] = useState("");
   const [trackProgressData, setTrackProgressData] = useState([]);
+  const [fullProgressLogs, setFullProgressLogs] = useState([]);
+  const [activeRecordTab, setActiveRecordTab] = useState("chart");
   
   // UI State
   const [aiInsight, setAiInsight] = useState(null);
@@ -142,9 +145,13 @@ const Journal = () => {
     try {
       const q = query(collection(firestore, "users", "patients", "accounts", userId, "trackProgress"), orderBy("timestamp", "asc"));
       const snap = await getDocs(q);
+      const allDocs = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+      setFullProgressLogs(allDocs);
       setTrackProgressData(processDocs(snap.docs));
     } catch (err) {
       const snap = await getDocs(collection(firestore, "users", "patients", "accounts", userId, "trackProgress"));
+      const allDocs = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+      setFullProgressLogs(allDocs);
       const arr = processDocs(snap.docs);
       setTrackProgressData(arr.sort((a, b) => a.fullDate - b.fullDate));
     }
@@ -239,9 +246,42 @@ const Journal = () => {
         </div>
 
         {/* ═══════════════════════════════════════════ */}
-        {/* SECTION 1: PO-SCORAD Progress Chart          */}
+        {/* SECTION 1: PO-SCORAD Chart / Past Logs     */}
         {/* ═══════════════════════════════════════════ */}
-        <ScoradTrendChart data={trackProgressData} />
+        <div className="relative z-0">
+          {/* Tab Toggle */}
+          <div className="flex items-end mb-0 print:hidden relative z-10">
+            <button
+              onClick={() => setActiveRecordTab("chart")}
+              className={`px-6 py-2.5 rounded-t-lg text-xs font-bold tracking-wide transition-all uppercase ${
+                activeRecordTab === "chart"
+                  ? "bg-blue-600 text-white"
+                  : "bg-slate-200/60 text-slate-500 hover:bg-slate-200"
+              }`}
+            >
+              PO-SCORAD CHART
+            </button>
+            <button
+              onClick={() => setActiveRecordTab("logs")}
+              className={`px-6 py-2.5 rounded-t-lg text-xs font-bold tracking-wide transition-all uppercase ${
+                activeRecordTab === "logs"
+                  ? "bg-[#0D9488] text-white"
+                  : "bg-slate-200/60 text-slate-500 hover:bg-slate-200"
+              }`}
+            >
+              PAST LOGS
+            </button>
+          </div>
+
+          {/* Tab Content Container */}
+          <div className="bg-white p-6 rounded-3xl rounded-tl-none shadow-sm border border-slate-100 print:hidden relative group transition-all duration-500 z-0 min-h-[400px]">
+            {activeRecordTab === "chart" ? (
+              <ScoradTrendChart data={trackProgressData} />
+            ) : (
+              <PastProgressLogs progressData={fullProgressLogs} />
+            )}
+          </div>
+        </div>
 
         {/* ═══════════════════════════════════════════ */}
         {/* SECTION 2: Daily Care & Clinical Visit     */}

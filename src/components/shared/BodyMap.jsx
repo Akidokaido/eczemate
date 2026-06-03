@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from "react";
+import { createPortal } from "react-dom";
 import { Camera, X } from "lucide-react";
 import PhotoUploadModal from "./PhotoUploadModal";
 
@@ -45,14 +46,20 @@ const BACK_BODY_PARTS = [
   { id: "B_rightFoot", label: "Right Foot (Back)", d: "M177.959,469.4603 C175.696,480.8753 173.092,490.9893 172.269,499.6373 C172.126,501.1303 170.239,516.3833 170.207,521.1793 C170.774,520.5023 171.791,519.3403 172.619,518.7873 C174.949,517.2343 176.529,519.7313 176.676,520.2623 C176.718,520.4153 176.746,520.5883 176.751,520.7673 C177.551,520.2293 178.233,520.1463 179.244,520.6003 C179.647,520.7813 179.861,521.2973 179.938,521.8343 C180.898,521.2443 182,521.2793 182.528,521.6953 C182.965,522.0413 183.143,522.5743 183.107,523.1063 C183.408,522.9493 183.79,522.8473 184.327,522.8293 C185.283,522.7973 185.795,523.8693 185.605,524.6353 C185.859,524.5713 186.094,524.5413 186.314,524.5333 C186.341,524.5253 186.364,524.5123 186.391,524.5063 C187.281,524.3053 188.271,524.7603 188.371,525.6483 C188.593,526.4913 188.21,527.7893 186.535,528.7463 C185.464,529.3573 184.422,531.9733 181.869,534.0373 C178.86,536.4713 177.619,535.9123 173.035,540.0793 C170.223,542.6363 165.827,552.3293 162.994,553.6623 C160.16,554.9963 153.369,553.7463 150.535,551.0793 C147.702,548.4123 149.958,543.3443 150.535,539.7463 C151.113,536.1483 149.832,534.7413 149.894,528.3043 C149.906,527.0283 150.358,520.0773 150.207,517.3663 C149.896,511.8213 146.363,488.7933 143.882,469.9693 C147.907,471.0323 153.343,471.9713 160.019,471.9713 C167.75,471.9713 173.823,470.7133 177.959,469.4603" },
 ];
 
-export default function BodyMap({ selectedParts = [], onTogglePart, readOnly = false, photos = {}, onPhotoUpload }) {
+export default function BodyMap({ selectedParts = [], onTogglePart, readOnly = false, photos = {}, onPhotoUpload, externalView, hideControls = false, externalUploadMode }) {
   const [hoveredZone, setHoveredZone] = useState(null);
-  const [view, setView] = useState("front"); // Toggle state
-  const [uploadMode, setUploadMode] = useState(false);
+  const [internalView, setInternalView] = useState("front"); // Toggle state
+  const [internalUploadMode, setInternalUploadMode] = useState(false);
   const [centers, setCenters] = useState({});
   const [activeUploadPart, setActiveUploadPart] = useState(null);
   const [activeViewPhotoPart, setActiveViewPhotoPart] = useState(null);
   
+  const view = externalView || internalView;
+  const setView = externalView ? () => {} : setInternalView;
+
+  const uploadMode = externalUploadMode !== undefined ? externalUploadMode : internalUploadMode;
+  const setUploadMode = externalUploadMode !== undefined ? () => {} : setInternalUploadMode;
+
   const svgRef = useRef(null);
 
   useEffect(() => {
@@ -71,7 +78,7 @@ export default function BodyMap({ selectedParts = [], onTogglePart, readOnly = f
 
   const handleClick = (zoneId) => {
     if (uploadMode) {
-      if (isSelected(zoneId)) {
+      if (isSelected(zoneId) && !readOnly) {
         const part = [...FRONT_BODY_PARTS, ...BACK_BODY_PARTS].find(p => p.id === zoneId);
         if(part) setActiveUploadPart(part);
       }
@@ -115,41 +122,46 @@ export default function BodyMap({ selectedParts = [], onTogglePart, readOnly = f
       `}</style>
 
       {/* VIEW TOGGLE BUTTONS */}
-      <div className="flex justify-center items-center gap-3 mb-6 w-full">
-        <div className="flex bg-slate-100 rounded-full p-1 shadow-inner border border-slate-200/60">
-          <button
-            className={`px-6 py-2 text-[11px] font-black tracking-wider rounded-full transition-all ${
-              view === "front" 
-                ? "bg-white text-[#0D9488] shadow-sm" 
-                : "text-slate-400 hover:text-slate-600"
-            }`}
-            onClick={(e) => { e.preventDefault(); setView("front"); }}
-          >
-            FRONT VIEW
-          </button>
-          <button
-            className={`px-6 py-2 text-[11px] font-black tracking-wider rounded-full transition-all ${
-              view === "back" 
-                ? "bg-white text-[#0D9488] shadow-sm" 
-                : "text-slate-400 hover:text-slate-600"
-            }`}
-            onClick={(e) => { e.preventDefault(); setView("back"); }}
-          >
-            BACK VIEW
-          </button>
-        </div>
+      {!hideControls && (
+        <div className="flex justify-center items-center gap-3 mb-6 w-full">
+          <div className="flex bg-slate-100 rounded-full p-1 shadow-inner border border-slate-200/60">
+            <button
+              className={`px-6 py-2 text-[11px] font-black tracking-wider rounded-full transition-all ${
+                view === "front" 
+                  ? "bg-white text-[#0D9488] shadow-sm" 
+                  : "text-slate-400 hover:text-slate-600"
+              }`}
+              onClick={(e) => { e.preventDefault(); setView("front"); }}
+            >
+              FRONT VIEW
+            </button>
+            <button
+              className={`px-6 py-2 text-[11px] font-black tracking-wider rounded-full transition-all ${
+                view === "back" 
+                  ? "bg-white text-[#0D9488] shadow-sm" 
+                  : "text-slate-400 hover:text-slate-600"
+              }`}
+              onClick={(e) => { e.preventDefault(); setView("back"); }}
+            >
+              BACK VIEW
+            </button>
+          </div>
+
         
-        {/* CAMERA UPLOAD BUTTON */}
-        <button 
-          className={`border p-2.5 rounded-full transition-all shadow-sm group ${
-            uploadMode ? "bg-teal-50 border-teal-300 text-teal-600 shadow-md" : "bg-white border-slate-200 text-slate-500 hover:text-teal-600 hover:border-teal-300 hover:bg-teal-50"
-          }`}
-          title="Toggle Photo Upload Mode"
-          onClick={(e) => { e.preventDefault(); setUploadMode(!uploadMode); }}
-        >
-          <Camera size={18} className="group-hover:scale-110 transition-transform" />
-        </button>
-      </div>
+          {/* CAMERA UPLOAD BUTTON */}
+          {!readOnly && (
+            <button 
+              className={`border p-2.5 rounded-full transition-all shadow-sm group ${
+                uploadMode ? "bg-teal-50 border-teal-300 text-teal-600 shadow-md" : "bg-white border-slate-200 text-slate-500 hover:text-teal-600 hover:border-teal-300 hover:bg-teal-50"
+              }`}
+              title="Toggle Photo Upload Mode"
+              onClick={(e) => { e.preventDefault(); setUploadMode(!uploadMode); }}
+            >
+              <Camera size={18} className="group-hover:scale-110 transition-transform" />
+            </button>
+          )}
+        </div>
+      )}
 
       <div className="flex justify-center w-full">
         {view === "front" ? (
@@ -165,7 +177,7 @@ export default function BodyMap({ selectedParts = [], onTogglePart, readOnly = f
                 <path
                   key={part.id}
                   id={part.id}
-                  className={`svg-body-part ${isSelected(part.id) ? "selected" : ""} ${readOnly && !uploadMode ? "readonly" : ""}`}
+                  className={`svg-body-part ${isSelected(part.id) ? "selected" : ""} ${readOnly ? "readonly" : ""}`}
                   d={part.d}
                   onClick={() => handleClick(part.id)}
                   onMouseEnter={() => { if (!readOnly) setHoveredZone(part.id); }}
@@ -175,7 +187,7 @@ export default function BodyMap({ selectedParts = [], onTogglePart, readOnly = f
                 </path>
               ))}
 
-              {uploadMode && FRONT_BODY_PARTS.filter(p => isSelected(p.id) && centers[p.id]).map(part => {
+              {(uploadMode || readOnly) && FRONT_BODY_PARTS.filter(p => isSelected(p.id) && centers[p.id]).map(part => {
                 const hasPhoto = photos && photos[part.id];
                 if (readOnly && !hasPhoto) return null;
                 const showEye = readOnly && hasPhoto;
@@ -184,7 +196,10 @@ export default function BodyMap({ selectedParts = [], onTogglePart, readOnly = f
                 <g 
                   key={`plus-${part.id}`} 
                   transform={`translate(${centers[part.id].x}, ${centers[part.id].y})`}
-                  onClick={() => showEye ? setActiveViewPhotoPart({ id: part.id, label: part.label, url: photos[part.id] }) : setActiveUploadPart(part)}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    showEye ? setActiveViewPhotoPart({ id: part.id, label: part.label, url: photos[part.id] }) : setActiveUploadPart(part);
+                  }}
                   style={{ cursor: "pointer" }}
                 >
                   <g className="icon-hover-group">
@@ -218,7 +233,7 @@ export default function BodyMap({ selectedParts = [], onTogglePart, readOnly = f
                 <path
                   key={part.id}
                   id={part.id}
-                  className={`svg-body-part ${isSelected(part.id) ? "selected" : ""} ${readOnly && !uploadMode ? "readonly" : ""}`}
+                  className={`svg-body-part ${isSelected(part.id) ? "selected" : ""} ${readOnly ? "readonly" : ""}`}
                   d={part.d}
                   onClick={() => handleClick(part.id)}
                   onMouseEnter={() => { if (!readOnly) setHoveredZone(part.id); }}
@@ -228,7 +243,7 @@ export default function BodyMap({ selectedParts = [], onTogglePart, readOnly = f
                 </path>
               ))}
 
-              {uploadMode && BACK_BODY_PARTS.filter(p => isSelected(p.id) && centers[p.id]).map(part => {
+              {(uploadMode || readOnly) && BACK_BODY_PARTS.filter(p => isSelected(p.id) && centers[p.id]).map(part => {
                 const hasPhoto = photos && photos[part.id];
                 if (readOnly && !hasPhoto) return null;
                 const showEye = readOnly && hasPhoto;
@@ -237,7 +252,10 @@ export default function BodyMap({ selectedParts = [], onTogglePart, readOnly = f
                 <g 
                   key={`plus-${part.id}`} 
                   transform={`translate(${centers[part.id].x}, ${centers[part.id].y})`}
-                  onClick={() => showEye ? setActiveViewPhotoPart({ id: part.id, label: part.label, url: photos[part.id] }) : setActiveUploadPart(part)}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    showEye ? setActiveViewPhotoPart({ id: part.id, label: part.label, url: photos[part.id] }) : setActiveUploadPart(part);
+                  }}
                   style={{ cursor: "pointer" }}
                 >
                   <g className="icon-hover-group">
@@ -273,8 +291,8 @@ export default function BodyMap({ selectedParts = [], onTogglePart, readOnly = f
         </p>
       )}
 
-      {uploadMode && readOnly && Object.keys(photos || {}).length > 0 && (
-        <p className="text-xs text-teal-600 text-center mt-5 font-bold bg-teal-50 px-4 py-2 rounded-full border border-teal-200">
+      {readOnly && Object.keys(photos || {}).length > 0 && (
+        <p className="text-[10px] sm:text-xs text-[#0D9488] text-center mt-5 font-bold bg-teal-50 px-4 py-2 rounded-full border border-teal-200 shadow-sm max-w-[250px]">
           Tap the eye icons to view photos
         </p>
       )}
@@ -292,8 +310,8 @@ export default function BodyMap({ selectedParts = [], onTogglePart, readOnly = f
       />
 
       {/* PHOTO VIEW MODAL */}
-      {activeViewPhotoPart && (
-        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 animate-fade-in" onClick={() => setActiveViewPhotoPart(null)}>
+      {activeViewPhotoPart && createPortal(
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 animate-fade-in" onClick={() => setActiveViewPhotoPart(null)}>
           <div className="bg-white rounded-3xl overflow-hidden max-w-2xl w-full shadow-2xl animate-fade-in-up" onClick={e => e.stopPropagation()}>
             <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between bg-slate-50">
               <div>
@@ -311,7 +329,8 @@ export default function BodyMap({ selectedParts = [], onTogglePart, readOnly = f
               <img src={activeViewPhotoPart.url} alt={activeViewPhotoPart.label} className="max-w-full h-auto max-h-[60vh] object-contain rounded-xl shadow-sm" />
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   );

@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { onAuthStateChanged, updateProfile } from "firebase/auth";
 import { doc, getDoc, updateDoc, setDoc } from "firebase/firestore";
 import { auth, db, firestore } from "../firebase/config";
+import { findUserByUid, getUserDocRef } from "../firebase/userPaths";
 import { User, Save, ArrowLeft, CheckCircle, Stethoscope } from "lucide-react";
 
 const EditProfile = () => {
@@ -21,20 +22,17 @@ const EditProfile = () => {
       if (!u) { navigate("/login"); return; }
       setUser(u);
 
-      // Load from users collection
-      const snap = await getDoc(doc(db, "users", u.uid));
-      if (snap.exists()) {
-        const data = snap.data();
-        setProfile(data);
+      // Load from proper user subcollection
+      const foundUser = await findUserByUid(u.uid);
+      if (foundUser) {
+        const { data, role } = foundUser;
+        setProfile({ ...data, role });
         setName(data.name || "");
         setPhone(data.phone || "");
 
-        // If doctor, also load specialty from doctors collection
-        if (data.role === "doctor") {
-          const docSnap = await getDoc(doc(firestore, "doctors", u.uid));
-          if (docSnap.exists()) {
-            setSpecialty(docSnap.data().specialty || "");
-          }
+        // If doctor, load specialty directly from account doc
+        if (role === "doctor") {
+          setSpecialty(data.specialty || "");
         }
       }
       setLoading(false);
@@ -46,19 +44,15 @@ const EditProfile = () => {
     e.preventDefault();
     setSaving(true);
     try {
-      // Update users collection
-      await updateDoc(doc(db, "users", user.uid), { name, phone });
+      // Update the role-based account collection
+      const updateData = { name, phone };
+      if (profile?.role === "doctor") {
+        updateData.specialty = specialty;
+      }
+      await updateDoc(getUserDocRef(profile.role, user.uid), updateData);
+      
       // Update Firebase Auth display name
       await updateProfile(user, { displayName: name });
-
-      // If doctor, also update doctors collection with name + specialty
-      if (profile?.role === "doctor") {
-        await setDoc(
-          doc(firestore, "doctors", user.uid),
-          { name, specialty },
-          { merge: true }
-        );
-      }
 
       setSaved(true);
       setTimeout(() => setSaved(false), 3000);
