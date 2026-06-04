@@ -1,10 +1,15 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { createPortal } from "react-dom";
 import { X, UploadCloud, Image as ImageIcon } from "lucide-react";
 
 export default function PhotoUploadModal({ isOpen, onClose, partId, partLabel, onUpload, existingPhoto }) {
   const [dragActive, setDragActive] = useState(false);
   const [preview, setPreview] = useState(existingPhoto || null);
+
+  // Reset preview when switching to a different body part
+  useEffect(() => {
+    setPreview(existingPhoto || null);
+  }, [partId, existingPhoto]);
 
   if (!isOpen) return null;
 
