@@ -433,7 +433,7 @@ const PatientHistory = () => {
                 activeRecordTab === "journal" ? "bg-sky-500 text-white" : "bg-slate-200/60 text-slate-500 hover:bg-slate-200"
               }`}
             >
-              PATIENT DIARY
+              PAST ENTRY JOURNAL
             </button>
             <button
               onClick={() => setActiveRecordTab("appointment")}
