@@ -163,139 +163,159 @@ export default function BodyMap({ selectedParts = [], onTogglePart, readOnly = f
         </div>
       )}
 
-      <div className="flex justify-center w-full">
-        {view === "front" ? (
-          <div className="flex flex-col items-center w-full max-w-[280px] animate-fade-in">
-            <svg
-              ref={view === "front" ? svgRef : null}
-              viewBox="0 0 265 565"
-              className="w-full h-auto"
-              style={{ userSelect: "none" }}
-              aria-label="Precise front body map"
-            >
-              {FRONT_BODY_PARTS.map((part) => (
-                <path
-                  key={part.id}
-                  id={part.id}
-                  className={`svg-body-part ${isSelected(part.id) ? "selected" : ""} ${readOnly ? "readonly" : ""}`}
-                  d={part.d}
-                  onClick={() => handleClick(part.id)}
-                  onMouseEnter={() => { if (!readOnly) setHoveredZone(part.id); }}
-                  onMouseLeave={() => setHoveredZone(null)}
-                >
-                  <title>{part.label}</title>
-                </path>
-              ))}
+      <div className="relative flex flex-col items-center w-full mt-4">
+        {/* BODY MAP SVG CONTAINER */}
+        <div className="flex justify-center w-full max-w-[280px]">
+          {view === "front" ? (
+            <div className="flex flex-col items-center w-full max-w-[280px] animate-fade-in">
+              <svg
+                ref={view === "front" ? svgRef : null}
+                viewBox="0 0 265 565"
+                className="w-full h-auto"
+                style={{ userSelect: "none" }}
+                aria-label="Precise front body map"
+              >
+                {FRONT_BODY_PARTS.map((part) => (
+                  <path
+                    key={part.id}
+                    id={part.id}
+                    className={`svg-body-part ${isSelected(part.id) ? "selected" : ""} ${readOnly ? "readonly" : ""}`}
+                    d={part.d}
+                    onClick={() => handleClick(part.id)}
+                    onMouseEnter={() => { if (!readOnly) setHoveredZone(part.id); }}
+                    onMouseLeave={() => setHoveredZone(null)}
+                  >
+                    <title>{part.label}</title>
+                  </path>
+                ))}
 
-              {(uploadMode || readOnly) && FRONT_BODY_PARTS.filter(p => isSelected(p.id) && centers[p.id]).map(part => {
-                const hasPhoto = photos && photos[part.id];
-                if (readOnly && !hasPhoto) return null;
-                const showEye = readOnly && hasPhoto;
-                
-                return (
-                <g 
-                  key={`plus-${part.id}`} 
-                  transform={`translate(${centers[part.id].x}, ${centers[part.id].y})`}
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    showEye ? setActiveViewPhotoPart({ id: part.id, label: part.label, url: photos[part.id] }) : setActiveUploadPart(part);
-                  }}
-                  style={{ cursor: "pointer" }}
-                >
-                  <g className="icon-hover-group">
-                    <circle cx="0" cy="0" r="12" fill="white" stroke="#1e293b" strokeWidth="2" />
-                    {showEye ? (
-                      <svg x="-7" y="-7" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#1e293b" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                        <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
-                        <circle cx="12" cy="12" r="3"></circle>
-                      </svg>
-                    ) : (
-                      <path d="M-6,0 L6,0 M0,-6 L0,6" stroke="#1e293b" strokeWidth="2.5" strokeLinecap="round" />
-                    )}
-                    {hasPhoto && !showEye && (
-                      <circle cx="9" cy="-9" r="4.5" fill="#10b981" stroke="white" strokeWidth="1.5" />
-                    )}
+                {(uploadMode || readOnly) && FRONT_BODY_PARTS.filter(p => isSelected(p.id) && centers[p.id]).map(part => {
+                  const hasPhoto = photos && photos[part.id];
+                  if (readOnly && !hasPhoto) return null;
+                  const showEye = readOnly && hasPhoto;
+                  
+                  return (
+                  <g 
+                    key={`plus-${part.id}`} 
+                    transform={`translate(${centers[part.id].x}, ${centers[part.id].y})`}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      showEye ? setActiveViewPhotoPart({ id: part.id, label: part.label, url: photos[part.id] }) : setActiveUploadPart(part);
+                    }}
+                    style={{ cursor: "pointer" }}
+                  >
+                    <g className="icon-hover-group">
+                      <circle cx="0" cy="0" r="12" fill="white" stroke="#1e293b" strokeWidth="2" />
+                      {showEye ? (
+                        <svg x="-7" y="-7" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#1e293b" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                          <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                          <circle cx="12" cy="12" r="3"></circle>
+                        </svg>
+                      ) : (
+                        <path d="M-6,0 L6,0 M0,-6 L0,6" stroke="#1e293b" strokeWidth="2.5" strokeLinecap="round" />
+                      )}
+                      {hasPhoto && !showEye && (
+                        <circle cx="9" cy="-9" r="4.5" fill="#10b981" stroke="white" strokeWidth="1.5" />
+                      )}
+                    </g>
                   </g>
-                </g>
-              )})}
-            </svg>
-          </div>
-        ) : (
-          <div className="flex flex-col items-center w-full max-w-[280px] animate-fade-in">
-            <svg
-              ref={view === "back" ? svgRef : null}
-              viewBox="0 0 265 565"
-              className="w-full h-auto"
-              style={{ userSelect: "none" }}
-              aria-label="Precise back body map"
-            >
-              {BACK_BODY_PARTS.map((part) => (
-                <path
-                  key={part.id}
-                  id={part.id}
-                  className={`svg-body-part ${isSelected(part.id) ? "selected" : ""} ${readOnly ? "readonly" : ""}`}
-                  d={part.d}
-                  onClick={() => handleClick(part.id)}
-                  onMouseEnter={() => { if (!readOnly) setHoveredZone(part.id); }}
-                  onMouseLeave={() => setHoveredZone(null)}
-                >
-                  <title>{part.label}</title>
-                </path>
-              ))}
+                )})}
+              </svg>
+            </div>
+          ) : (
+            <div className="flex flex-col items-center w-full max-w-[280px] animate-fade-in">
+              <svg
+                ref={view === "back" ? svgRef : null}
+                viewBox="0 0 265 565"
+                className="w-full h-auto"
+                style={{ userSelect: "none" }}
+                aria-label="Precise back body map"
+              >
+                {BACK_BODY_PARTS.map((part) => (
+                  <path
+                    key={part.id}
+                    id={part.id}
+                    className={`svg-body-part ${isSelected(part.id) ? "selected" : ""} ${readOnly ? "readonly" : ""}`}
+                    d={part.d}
+                    onClick={() => handleClick(part.id)}
+                    onMouseEnter={() => { if (!readOnly) setHoveredZone(part.id); }}
+                    onMouseLeave={() => setHoveredZone(null)}
+                  >
+                    <title>{part.label}</title>
+                  </path>
+                ))}
 
-              {(uploadMode || readOnly) && BACK_BODY_PARTS.filter(p => isSelected(p.id) && centers[p.id]).map(part => {
-                const hasPhoto = photos && photos[part.id];
-                if (readOnly && !hasPhoto) return null;
-                const showEye = readOnly && hasPhoto;
-                
-                return (
-                <g 
-                  key={`plus-${part.id}`} 
-                  transform={`translate(${centers[part.id].x}, ${centers[part.id].y})`}
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    showEye ? setActiveViewPhotoPart({ id: part.id, label: part.label, url: photos[part.id] }) : setActiveUploadPart(part);
-                  }}
-                  style={{ cursor: "pointer" }}
-                >
-                  <g className="icon-hover-group">
-                    <circle cx="0" cy="0" r="12" fill="white" stroke="#1e293b" strokeWidth="2" />
-                    {showEye ? (
-                      <svg x="-7" y="-7" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#1e293b" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                        <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
-                        <circle cx="12" cy="12" r="3"></circle>
-                      </svg>
-                    ) : (
-                      <path d="M-6,0 L6,0 M0,-6 L0,6" stroke="#1e293b" strokeWidth="2.5" strokeLinecap="round" />
-                    )}
-                    {hasPhoto && !showEye && (
-                      <circle cx="9" cy="-9" r="4.5" fill="#10b981" stroke="white" strokeWidth="1.5" />
-                    )}
+                {(uploadMode || readOnly) && BACK_BODY_PARTS.filter(p => isSelected(p.id) && centers[p.id]).map(part => {
+                  const hasPhoto = photos && photos[part.id];
+                  if (readOnly && !hasPhoto) return null;
+                  const showEye = readOnly && hasPhoto;
+                  
+                  return (
+                  <g 
+                    key={`plus-${part.id}`} 
+                    transform={`translate(${centers[part.id].x}, ${centers[part.id].y})`}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      showEye ? setActiveViewPhotoPart({ id: part.id, label: part.label, url: photos[part.id] }) : setActiveUploadPart(part);
+                    }}
+                    style={{ cursor: "pointer" }}
+                  >
+                    <g className="icon-hover-group">
+                      <circle cx="0" cy="0" r="12" fill="white" stroke="#1e293b" strokeWidth="2" />
+                      {showEye ? (
+                        <svg x="-7" y="-7" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#1e293b" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                          <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                          <circle cx="12" cy="12" r="3"></circle>
+                        </svg>
+                      ) : (
+                        <path d="M-6,0 L6,0 M0,-6 L0,6" stroke="#1e293b" strokeWidth="2.5" strokeLinecap="round" />
+                      )}
+                      {hasPhoto && !showEye && (
+                        <circle cx="9" cy="-9" r="4.5" fill="#10b981" stroke="white" strokeWidth="1.5" />
+                      )}
+                    </g>
                   </g>
-                </g>
-              )})}
-            </svg>
-          </div>
-        )}
+                )})}
+              </svg>
+            </div>
+          )}
+        </div>
+
+        {/* INSTRUCTIONS ON THE RIGHT */}
+        <div className="flex flex-col justify-center items-center md:items-start w-full max-w-[280px] mt-6 md:mt-0 md:absolute md:left-[calc(50%+150px)] lg:left-[calc(50%+170px)] md:top-1/2 md:-translate-y-1/2 md:w-[220px] lg:w-[260px]">
+          {!readOnly && !uploadMode && (
+            <div className="text-xs text-slate-600 text-left font-medium w-full">
+              <span className="block font-bold text-slate-800 mb-3 text-sm">How to add photos:</span>
+              <div className="space-y-2">
+                <span className="flex items-start gap-2">
+                  <span className="bg-slate-100 text-slate-500 rounded-full w-4 h-4 flex items-center justify-center text-[10px] shrink-0 mt-0.5">1</span>
+                  <span>Click affected areas first</span>
+                </span>
+                <span className="flex items-start gap-2">
+                  <span className="bg-slate-100 text-slate-500 rounded-full w-4 h-4 flex items-center justify-center text-[10px] shrink-0 mt-0.5">2</span>
+                  <span>Click the <Camera size={14} className="inline align-text-bottom mx-0.5 text-teal-600"/> camera icon above</span>
+                </span>
+                <span className="flex items-start gap-2">
+                  <span className="bg-slate-100 text-slate-500 rounded-full w-4 h-4 flex items-center justify-center text-[10px] shrink-0 mt-0.5">3</span>
+                  <span>Click <span className="font-bold text-teal-600">+</span> to add photo</span>
+                </span>
+              </div>
+            </div>
+          )}
+
+          {uploadMode && !readOnly && (
+            <p className="text-sm text-teal-700 text-left font-semibold w-full">
+              Tap the <span className="font-bold text-lg leading-none align-middle mx-0.5">+</span> icons on the body map to upload photos for your affected areas.
+            </p>
+          )}
+
+          {readOnly && Object.keys(photos || {}).length > 0 && (
+            <p className="text-sm text-[#0D9488] text-left font-bold w-full">
+              Tap the eye icons on the body map to view attached photos.
+            </p>
+          )}
+        </div>
       </div>
-
-      {!readOnly && !uploadMode && (
-        <p className="text-xs text-slate-400 text-center mt-5 font-medium bg-slate-50 px-4 py-2 rounded-full border border-slate-100">
-          Tap on a body zone to toggle selection
-        </p>
-      )}
-
-      {uploadMode && !readOnly && (
-        <p className="text-xs text-teal-600 text-center mt-5 font-bold bg-teal-50 px-4 py-2 rounded-full border border-teal-200">
-          Tap the '+' icons to upload photos for affected areas
-        </p>
-      )}
-
-      {readOnly && Object.keys(photos || {}).length > 0 && (
-        <p className="text-[10px] sm:text-xs text-[#0D9488] text-center mt-5 font-bold bg-teal-50 px-4 py-2 rounded-full border border-teal-200 shadow-sm max-w-[250px]">
-          Tap the eye icons to view photos
-        </p>
-      )}
 
       {/* UPLOAD MODAL */}
       <PhotoUploadModal 
