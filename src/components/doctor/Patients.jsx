@@ -1,3 +1,4 @@
+// Patients page - shows patients assigned to the logged-in doctor
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import DoctorLayout from "../DoctorLayout";
@@ -12,6 +13,7 @@ const Patients = () => {
   const [searchQuery, setSearchQuery] = useState("");
 
   useEffect(() => {
+    // Fetch patients where doctorId matches logged-in doctor
     const unsub = onAuthStateChanged(auth, async (user) => {
       if (!user) return;
       try {
@@ -23,6 +25,7 @@ const Patients = () => {
     return () => unsub();
   }, []);
 
+  // Filter by name or email
   const filteredPatients = patients.filter(p => {
     const q = searchQuery.toLowerCase();
     return (
@@ -35,7 +38,7 @@ const Patients = () => {
     <DoctorLayout title="Patients">
       <div className="space-y-6 animate-fade-in-up">
         
-        {/* Controls: Search */}
+        {/* Search bar and patient count */}
         <div className="glass p-4 sm:p-6 flex flex-col sm:flex-row gap-4 justify-between items-center">
           <div className="flex items-center gap-3 w-full sm:w-1/2">
             <div className="w-10 h-10 rounded-xl flex items-center justify-center bg-sky-50 flex-shrink-0">
@@ -58,6 +61,7 @@ const Patients = () => {
           </div>
         </div>
 
+        {/* Patient list */}
         {loading ? (
           <div className="glass p-8 text-center" style={{ color: "var(--text-secondary)" }}>Loading patients...</div>
         ) : filteredPatients.length === 0 ? (
@@ -78,6 +82,7 @@ const Patients = () => {
                   </div>
                 </div>
                 <div className="flex items-center gap-3">
+                   {/* Navigate to patient history page */}
                    <button 
                      onClick={() => navigate(`/doctor/patient/${p.id}`)} 
                      className="btn-gradient text-xs py-2 px-5"

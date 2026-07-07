@@ -1,3 +1,4 @@
+// Admin page - manage appointments across all doctors (select doctor, approve, cancel with reason)
 import React, { useState, useEffect } from "react";
 import { firestore, collection, getDocs, doc, updateDoc, query, where } from "../../firebase/config";
 import { getUserCollectionRef } from "../../firebase/userPaths";
@@ -6,14 +7,14 @@ import { useNavigate } from "react-router-dom";
 import StatusBadge from "../shared/StatusBadge";
 
 const ManageAppointments = () => {
-  const [doctors, setDoctors] = useState([]);
+  const [doctors, setDoctors] = useState([]);         // Approved doctors for dropdown
   const [selectedDoctorId, setSelectedDoctorId] = useState("");
   const [appointments, setAppointments] = useState([]);
   const [loading, setLoading] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   
-  // Cancel Modal State
+  // Cancel modal state
   const [isCancelModalOpen, setIsCancelModalOpen] = useState(false);
   const [selectedAppt, setSelectedAppt] = useState(null);
   const [cancelReason, setCancelReason] = useState("");
@@ -21,7 +22,7 @@ const ManageAppointments = () => {
   
   const navigate = useNavigate();
 
-  // 1. Fetch Doctors
+  // Fetch approved doctors for the dropdown
   useEffect(() => {
     const fetchDoctors = async () => {
       try {
@@ -43,7 +44,7 @@ const ManageAppointments = () => {
     fetchDoctors();
   }, []);
 
-  // 2. Fetch Appointments when Doctor selected
+  // Fetch appointments when a doctor is selected
   useEffect(() => {
     if (!selectedDoctorId) {
       setAppointments([]);
@@ -56,6 +57,7 @@ const ManageAppointments = () => {
         const patientsSnap = await getDocs(collection(firestore, "users", "patients", "accounts"));
         const allAppts = [];
 
+        // Loop through each patient's appointments for the selected doctor
         for (const patientDoc of patientsSnap.docs) {
           const q = query(
             collection(firestore, "users", "patients", "accounts", patientDoc.id, "appointments"),
@@ -67,7 +69,7 @@ const ManageAppointments = () => {
           });
         }
         
-        // Sort by date descending
+        // Sort newest first
         allAppts.sort((a, b) => (b.date?.toDate?.() || 0) - (a.date?.toDate?.() || 0));
         setAppointments(allAppts);
       } catch (err) {
@@ -80,6 +82,7 @@ const ManageAppointments = () => {
     fetchAppointments();
   }, [selectedDoctorId]);
 
+  // Approve an appointment
   const handleApprove = async (appt) => {
     try {
       const apptRef = doc(firestore, "users", "patients", "accounts", appt.patientDocId, "appointments", appt.id);
@@ -93,12 +96,14 @@ const ManageAppointments = () => {
     }
   };
 
+  // Open cancel modal
   const handleCancelClick = (appt) => {
     setSelectedAppt(appt);
     setCancelReason("");
     setIsCancelModalOpen(true);
   };
 
+  // Submit cancellation with reason
   const submitCancel = async () => {
     if (!cancelReason.trim()) return;
     setCancelling(true);
@@ -111,7 +116,6 @@ const ManageAppointments = () => {
         cancelReason: cancelReason.trim()
       });
 
-      // Update local state
       setAppointments(prev => prev.map(a => 
         a.id === selectedAppt.id ? { ...a, status: "cancelled", cancelReason: cancelReason.trim() } : a
       ));
@@ -125,6 +129,7 @@ const ManageAppointments = () => {
     }
   };
 
+  // Filter by search and status
   const filteredAppointments = appointments.filter(a => {
     const q = searchQuery.toLowerCase();
     const matchesSearch = (
@@ -140,9 +145,10 @@ const ManageAppointments = () => {
     <div className="p-8 max-w-7xl mx-auto animate-fade-in-up">
       <main className="pb-8 flex-1 animate-fade-in-up">
           
-          {/* Controls: Dropdown, Search, Status */}
+          {/* Controls: doctor selector, search, status filter */}
           <div className="glass p-6 mb-6 grid grid-cols-1 md:grid-cols-3 gap-4 items-center">
             
+            {/* Doctor dropdown */}
             <div className="flex items-center gap-3 w-full">
               <div className="w-10 h-10 rounded-xl flex items-center justify-center bg-sky-50 flex-shrink-0">
                 <Stethoscope className="h-5 w-5 text-sky-500" />
@@ -161,6 +167,7 @@ const ManageAppointments = () => {
               </div>
             </div>
 
+            {/* Search */}
             <div className="w-full relative">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
               <input 
@@ -172,6 +179,7 @@ const ManageAppointments = () => {
               />
             </div>
             
+            {/* Status filter */}
             <div className="w-full relative">
                <select 
                   className="input-dark w-full appearance-none cursor-pointer"
@@ -187,7 +195,7 @@ const ManageAppointments = () => {
             </div>
           </div>
 
-          {/* Table */}
+          {/* Appointments table */}
           <div className="glass overflow-y-auto max-h-[600px] custom-scrollbar">
             <table className="w-full text-left border-collapse">
               <thead>
@@ -277,7 +285,7 @@ const ManageAppointments = () => {
 
         </main>
 
-      {/* Cancel Modal */}
+      {/* Cancel modal - asks for cancellation reason */}
       {isCancelModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4 animate-fade-in">
           <div className="glass-strong p-6 max-w-md w-full animate-fade-in-up">

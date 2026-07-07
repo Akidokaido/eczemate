@@ -1,3 +1,5 @@
+// Error boundary - catches React crashes and shows a friendly error page with reload button
+// In dev mode, also shows the error stack trace for debugging
 import React, { Component } from 'react';
 import { AlertOctagon, RefreshCw } from 'lucide-react';
 
@@ -7,17 +9,18 @@ class ErrorBoundary extends Component {
     this.state = { hasError: false, errorInfo: null };
   }
 
+  // Triggered when a child component throws an error
   static getDerivedStateFromError(error) {
-    // Update state so the next render will show the fallback UI.
     return { hasError: true };
   }
 
+  // Log the error details to console
   componentDidCatch(error, errorInfo) {
-    // In a production app, this is where you would log to Sentry or Datadog
     console.error("ErrorBoundary caught an error:", error, errorInfo);
     this.setState({ errorInfo });
   }
 
+  // Reload the entire page
   handleReload = () => {
     window.location.reload();
   };

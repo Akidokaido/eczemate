@@ -1,3 +1,5 @@
+// Reusable badge that shows appointment/doctor status with color coding
+// Green = approved/completed, Yellow = pending, Red = rejected/cancelled
 import React from 'react';
 
 const StatusBadge = ({ status }) => {

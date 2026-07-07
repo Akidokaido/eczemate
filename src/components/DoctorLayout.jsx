@@ -1,3 +1,5 @@
+// DoctorLayout - wrapper layout for all doctor-side pages
+// Includes the shared Header with doctor-specific navigation tabs and a standard layout structure
 import React, { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { onAuthStateChanged } from "firebase/auth";

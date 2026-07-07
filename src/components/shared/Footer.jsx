@@ -1,3 +1,4 @@
+// Footer - site-wide footer with quick links, contact info, and medical disclaimer
 import React, { useEffect, useState } from "react";
 import { Heart, Shield, Droplets, Mail, MapPin, ExternalLink, BookOpen, Activity, Bot, Calendar } from "lucide-react";
 import { useNavigate } from "react-router-dom";
@@ -5,6 +6,7 @@ import { onAuthStateChanged } from "firebase/auth";
 import { auth } from "../../firebase/config";
 import { findUserByUid } from "../../firebase/userPaths";
 
+// Quick links navigate to patient dashboard tabs (or scroll to features for guests)
 const QUICK_LINKS = [
   { label: "Journal",        icon: BookOpen,  tab: "journal" },
   { label: "Track Progress", icon: Activity,  tab: "track" },
@@ -17,6 +19,7 @@ const Footer = () => {
   const [loggedIn, setLoggedIn] = useState(false);
   const [role, setRole] = useState(null);
 
+  // Check if user is logged in and what role they have
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, async (user) => {
       setLoggedIn(!!user);
@@ -30,6 +33,7 @@ const Footer = () => {
     return unsub;
   }, []);
 
+  // Navigate to correct dashboard based on role, or scroll to features if guest
   const handleQuickLink = (tab) => {
     if (loggedIn) {
       if (role === "admin") {

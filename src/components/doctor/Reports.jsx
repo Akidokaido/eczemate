@@ -1,3 +1,4 @@
+// Reports page - shows summary stats for the logged-in doctor
 import React, { useState, useEffect } from "react";
 import DoctorLayout from "../DoctorLayout";
 import { auth, firestore, onAuthStateChanged, collection, query, where, getDocs } from "../../firebase/config";
@@ -11,16 +12,24 @@ const Reports = () => {
     const unsub = onAuthStateChanged(auth, async (user) => {
       if (!user) return;
       try {
+        // Fetch appointments for this doctor
         const apptSnap = await getDocs(query(collection(firestore, "appointments"), where("doctorId", "==", user.uid)));
         const appts = apptSnap.docs.map((d) => d.data());
+
+        // Fetch patients assigned to this doctor
         const patSnap = await getDocs(query(getUserCollectionRef("patient"), where("doctorId", "==", user.uid)));
+
+        // Count symptom logs for each patient
         let totalLogs = 0;
         for (const pid of patSnap.docs.map((d) => d.id)) {
           const logSnap = await getDocs(query(collection(firestore, "symptom_logs"), where("userId", "==", pid)));
           totalLogs += logSnap.size;
         }
+
+        // Set all stats
         setStats({
-          totalPatients: patSnap.size, totalAppointments: apptSnap.size,
+          totalPatients: patSnap.size,
+          totalAppointments: apptSnap.size,
           pendingAppts: appts.filter((a) => a.status === "pending").length,
           approvedAppts: appts.filter((a) => a.status === "approved").length,
           rejectedAppts: appts.filter((a) => a.status === "rejected").length,
@@ -32,6 +41,7 @@ const Reports = () => {
     return () => unsub();
   }, []);
 
+  // Config for the 6 stat cards
   const reportCards = [
     { label: "Total Patients", value: stats.totalPatients, color: "#6366f1" },
     { label: "Total Appointments", value: stats.totalAppointments, color: "#06b6d4" },

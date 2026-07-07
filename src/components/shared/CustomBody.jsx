@@ -1,8 +1,11 @@
+// Demo component - shows a clickable right leg & ankle SVG body part
+// Used as a prototype/demo for the body map interaction
 import React, { useState } from "react";
 
 export default function CustomBody() {
-  const [selectedZones, setSelectedZones] = useState([]);
+  const [selectedZones, setSelectedZones] = useState([]); // Tracks which zones are clicked
 
+  // Toggle a zone on/off when clicked
   const toggleZone = (id) => {
     setSelectedZones((prev) =>
       prev.includes(id) ? prev.filter((z) => z !== id) : [...prev, id]

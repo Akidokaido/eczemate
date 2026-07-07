@@ -1,3 +1,4 @@
+// Settings page - lets doctor navigate to Edit Profile
 import React from "react";
 import { useNavigate } from "react-router-dom";
 import DoctorLayout from "../DoctorLayout";
@@ -14,6 +15,7 @@ const Settings = () => {
           <p className="text-sm" style={{ color: "var(--text-secondary)" }}>
             Manage your profile information, including your name, phone number, and specialty, from the Edit Profile page.
           </p>
+          {/* Navigate to edit profile page */}
           <button
             onClick={() => navigate("/edit-profile")}
             className="btn-gradient w-full flex items-center justify-center gap-2 py-3"

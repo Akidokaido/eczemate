@@ -1,3 +1,4 @@
+// Reusable card wrapper - white rounded box with optional hover effect
 import React from 'react';
 
 const Card = ({ 

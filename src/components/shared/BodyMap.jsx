@@ -1,8 +1,11 @@
+// Interactive body map - SVG human body with clickable zones (front + back views)
+// Patients click body parts to mark affected areas; camera mode lets them upload photos per zone
 import { useState, useRef, useEffect } from "react";
 import { createPortal } from "react-dom";
 import { Camera, X } from "lucide-react";
 import PhotoUploadModal from "./PhotoUploadModal";
 
+// SVG path data for front body parts (each part has an id, label, and SVG path)
 const FRONT_BODY_PARTS = [
   { id: "F_head", label: "Head", d: "M161.3853,32.7575 C160.2413,32.2185 159.1003,32.2275 158.0063,32.6105 C158.1173,25.0545 157.1563,16.2435 152.9353,9.7205 C149.0403,3.7005 142.4353,0.0005 132.1023,0.0005 C121.7693,0.0005 115.1643,3.7005 111.2693,9.7205 C107.0483,16.2435 106.0873,25.0545 106.1983,32.6105 C105.1043,32.2275 103.9633,32.2185 102.8193,32.7575 C100.6913,33.7595 102.1093,37.9565 102.6483,41.0205 C103.1873,44.0855 103.1623,47.5135 104.6653,49.7805 C105.9533,51.7235 107.4133,51.8915 108.4953,50.7815 C111.5693,61.2385 115.9353,72.4675 132.1023,72.4675 C148.2693,72.4675 152.6353,61.2385 155.7093,50.7815 C156.7913,51.8915 158.2513,51.7235 159.5393,49.7805 C161.0433,47.5135 161.0173,44.0855 161.5563,41.0205 C162.0953,37.9565 163.5133,33.7595 161.3853,32.7575" },
   { id: "F_upperTorso", label: "Upper Torso", d: "M152.2276,83.8043 C151.1376,82.9963 148.6026,80.8043 148.2276,74.5543 C148.1056,72.5253 148.6906,67.5393 148.9656,65.3613 C145.4656,69.5743 140.3046,72.4683 132.1026,72.4683 C123.8996,72.4683 118.7386,69.5743 115.2396,65.3613 C115.5136,67.5393 116.0996,72.5253 115.9776,74.5543 C115.6026,80.8043 113.0676,82.9963 111.9776,83.8043 C108.7416,86.2013 92.9046,94.2653 84.4076,97.3493 C85.6546,107.0363 86.5136,116.7623 86.8046,126.4233 C92.5646,128.8473 106.3896,133.1373 132.1026,133.1373 C157.8146,133.1373 171.6406,128.8473 177.3996,126.4233 C177.6906,116.7623 178.5496,107.0363 179.7966,97.3493 C171.2996,94.2653 155.4636,86.2013 152.2276,83.8043" },
@@ -25,6 +28,7 @@ const FRONT_BODY_PARTS = [
   { id: "F_rightFoot", label: "Right Foot", d: "M86.2451,469.4606 C88.5091,480.8756 91.1121,490.9896 91.9351,499.6376 C93.2691,513.6376 94.2691,525.1376 92.2691,531.9716 C91.9931,532.9136 91.7631,533.8046 91.5701,534.6506 C90.5161,535.6466 89.2381,536.9856 88.1021,538.4716 C85.9351,541.3046 85.4351,541.9716 81.4351,543.4716 C77.4351,544.9716 74.2271,546.6166 72.0401,548.4296 C69.8521,550.2416 68.3521,550.7416 67.1021,550.9916 C65.8521,551.2416 63.4151,551.3666 62.3521,553.8046 C61.2901,556.2416 63.5401,557.6166 65.4771,557.1796 C65.7881,557.1086 66.0761,556.9786 66.3521,556.8256 C66.6251,557.7656 67.3771,558.5916 68.4771,558.5546 C69.7251,558.5126 70.4801,558.2026 71.0631,557.7546 C71.1311,558.4696 71.4431,559.1466 72.0401,559.6166 C72.9531,560.3376 74.8771,560.3766 76.5311,559.3146 C76.6461,559.7106 76.8471,560.0796 77.1651,560.3666 C78.3571,561.4446 80.9851,561.6326 83.0511,560.5376 C83.6001,561.7126 84.9001,562.9626 87.9151,562.8046 C92.6651,562.5546 95.7901,559.9296 99.2271,557.5546 C102.6651,555.1796 104.9771,554.1796 110.2271,553.3046 C115.4771,552.4296 116.3521,548.0546 114.3521,541.9296 C112.5911,536.5346 114.8001,534.5796 113.4321,530.2626 C113.2701,522.6876 113.9551,516.3556 115.2691,507.8046 C117.5581,492.8966 119.2781,480.4076 120.5431,469.9116 C116.4981,470.9986 110.9841,471.9716 104.1851,471.9716 C96.4551,471.9716 90.3811,470.7136 86.2451,469.4606" },
 ];
 
+// SVG path data for back body parts
 const BACK_BODY_PARTS = [
   { id: "B_head", label: "Head (Back)", d: "M161.3853,32.7575 C160.2413,32.2185 159.1003,32.2275 158.0063,32.6105 C158.1173,25.0545 157.1563,16.2435 152.9353,9.7205 C149.0403,3.7005 142.4353,0.0005 132.1023,0.0005 C121.7693,0.0005 115.1643,3.7005 111.2693,9.7205 C107.0483,16.2435 106.0873,25.0545 106.1983,32.6105 C105.1043,32.2275 103.9633,32.2185 102.8193,32.7575 C100.6913,33.7595 102.1093,37.9565 102.6483,41.0205 C103.1873,44.0855 103.1623,47.5135 104.6653,49.7805 C105.9533,51.7235 107.4133,51.8915 108.4953,50.7815 C111.5693,61.2385 115.9353,72.4675 132.1023,72.4675 C148.2693,72.4675 152.6353,61.2385 155.7093,50.7815 C156.7913,51.8915 158.2513,51.7235 159.5393,49.7805 C161.0433,47.5135 161.0173,44.0855 161.5563,41.0205 C162.0953,37.9565 163.5133,33.7595 161.3853,32.7575" },
   { id: "B_upperTorso", label: "Upper Torso (Back)", d: "M152.2276,83.8043 C151.1376,82.9963 148.6026,80.8043 148.2276,74.5543 C148.1056,72.5253 148.6906,67.5393 148.9656,65.3613 C145.4656,69.5743 140.3046,72.4683 132.1026,72.4683 C123.8996,72.4683 118.7386,69.5743 115.2396,65.3613 C115.5136,67.5393 116.0996,72.5253 115.9776,74.5543 C115.6026,80.8043 113.0676,82.9963 111.9776,83.8043 C108.7416,86.2013 92.9046,94.2653 84.4076,97.3493 C85.6546,107.0363 86.5136,116.7623 86.8046,126.4233 C92.5646,128.8473 106.3896,133.1373 132.1026,133.1373 C157.8146,133.1373 171.6406,128.8473 177.3996,126.4233 C177.6906,116.7623 178.5496,107.0363 179.7966,97.3493 C171.2996,94.2653 155.4636,86.2013 152.2276,83.8043" },
@@ -48,12 +52,13 @@ const BACK_BODY_PARTS = [
 
 export default function BodyMap({ selectedParts = [], onTogglePart, readOnly = false, photos = {}, onPhotoUpload, externalView, hideControls = false, externalUploadMode }) {
   const [hoveredZone, setHoveredZone] = useState(null);
-  const [internalView, setInternalView] = useState("front"); // Toggle state
-  const [internalUploadMode, setInternalUploadMode] = useState(false);
-  const [centers, setCenters] = useState({});
-  const [activeUploadPart, setActiveUploadPart] = useState(null);
-  const [activeViewPhotoPart, setActiveViewPhotoPart] = useState(null);
+  const [internalView, setInternalView] = useState("front"); // Front or back view
+  const [internalUploadMode, setInternalUploadMode] = useState(false); // Photo upload mode toggle
+  const [centers, setCenters] = useState({}); // Center coordinates of each body part (for icons)
+  const [activeUploadPart, setActiveUploadPart] = useState(null); // Which part's upload modal is open
+  const [activeViewPhotoPart, setActiveViewPhotoPart] = useState(null); // Which part's photo is being viewed
   
+  // Allow parent to control view and upload mode, or use internal state
   const view = externalView || internalView;
   const setView = externalView ? () => {} : setInternalView;
 
@@ -62,6 +67,7 @@ export default function BodyMap({ selectedParts = [], onTogglePart, readOnly = f
 
   const svgRef = useRef(null);
 
+  // Calculate center position of each body part for placing camera/eye icons
   useEffect(() => {
     if (svgRef.current) {
       const paths = svgRef.current.querySelectorAll("path.svg-body-part");
@@ -76,13 +82,16 @@ export default function BodyMap({ selectedParts = [], onTogglePart, readOnly = f
 
   const isSelected = (id) => selectedParts.includes(id);
 
+  // Handle body part click - either open photo upload or toggle selection
   const handleClick = (zoneId) => {
     if (uploadMode) {
+      // In upload mode, clicking a selected zone opens the photo upload modal
       if (isSelected(zoneId) && !readOnly) {
         const part = [...FRONT_BODY_PARTS, ...BACK_BODY_PARTS].find(p => p.id === zoneId);
         if(part) setActiveUploadPart(part);
       }
     } else {
+      // In normal mode, clicking toggles the zone selection
       if (!readOnly && onTogglePart) onTogglePart(zoneId);
     }
   };

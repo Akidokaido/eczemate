@@ -1,3 +1,5 @@
+// Photo upload modal - drag & drop or browse to upload a photo for a body part
+// Used inside BodyMap when camera/upload mode is active
 import { useState, useEffect } from "react";
 import { createPortal } from "react-dom";
 import { X, UploadCloud, Image as ImageIcon } from "lucide-react";

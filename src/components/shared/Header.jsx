@@ -1,3 +1,5 @@
+// Header - top navigation bar used on both landing page and dashboard
+// Shows logo, nav links (or dashboard tabs), and user avatar dropdown
 import React, { useState, useRef, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { LogOut, User, Menu, ChevronDown, Pencil } from "lucide-react";
@@ -20,11 +22,13 @@ const Header = ({ user, profile, isDashboard = false, tabs = [], activeSection, 
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
+  // Sign out and redirect to home
   const handleLogout = async () => {
     await signOut(auth);
     navigate("/");
   };
 
+  // Navigate to edit profile page
   const handleEditProfile = () => {
     setDropdownOpen(false);
     navigate("/edit-profile");

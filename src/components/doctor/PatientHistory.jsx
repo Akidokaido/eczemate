@@ -1,3 +1,5 @@
+// Patient history page - full patient file with 5 tabs (SCORAD chart, logs, medical records, journal, appointments)
+// Only accessible by the assigned doctor (access control check)
 import React, { useState, useEffect } from "react";
 import { useParams } from "react-router-dom";
 import DoctorLayout from "../DoctorLayout";
@@ -10,23 +12,28 @@ import PastProgressLogs from "../../features/journal/components/PastProgressLogs
 import ReactCalendar from 'react-calendar';
 import 'react-calendar/dist/Calendar.css';
 
+// Available time slots for appointments
 const TIME_SLOTS = [
   "8:00 AM", "9:00 AM", "10:00 AM", "11:00 AM",
   "2:00 PM", "3:00 PM", "4:00 PM", "5:00 PM",
 ];
 
 const PatientHistory = () => {
-  const { patientId } = useParams();
+  const { patientId } = useParams(); // Get patient ID from URL
+
+  // Core state
   const [patient, setPatient] = useState(null);
   const [journalEntries, setJournalEntries] = useState([]);
   const [loading, setLoading] = useState(true);
 
+  // Doctor and form state
   const [doctorProfile, setDoctorProfile] = useState(null);
   const [newActionItem, setNewActionItem] = useState("");
   const [patientSummary, setPatientSummary] = useState("");
   const [privateNotes, setPrivateNotes] = useState("");
   const [prescriptionsInput, setPrescriptionsInput] = useState("");
 
+  // Records and filters
   const [errorMsg, setErrorMsg] = useState("");
   const [medicalRecords, setMedicalRecords] = useState([]);
   const [recordDateFilter, setRecordDateFilter] = useState("");
@@ -35,7 +42,7 @@ const PatientHistory = () => {
   const [fullProgressLogs, setFullProgressLogs] = useState([]);
   const [activeRecordTab, setActiveRecordTab] = useState("chart");
 
-  // Set Future Appointment state
+  // Appointment scheduling state
   const [apptDate, setApptDate] = useState("");
   const [apptTimeSlot, setApptTimeSlot] = useState("");
   const [apptReason, setApptReason] = useState("");
@@ -47,6 +54,7 @@ const PatientHistory = () => {
   const [upcomingAppointments, setUpcomingAppointments] = useState([]);
   const [apptDateFilter, setApptDateFilter] = useState(null);
 
+  // Mark appointment as completed
   const handleCompleteAppointment = async (apptId) => {
     try {
       const docRef = doc(firestore, "users", "patients", "accounts", patientId, "appointments", apptId);
@@ -58,6 +66,7 @@ const PatientHistory = () => {
     }
   };
 
+  // Fetch doctor profile on login
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, async (user) => {
       if (user) {
@@ -72,23 +81,24 @@ const PatientHistory = () => {
     return () => unsub();
   }, []);
 
+  // Fetch all patient data once doctor profile is ready
   useEffect(() => {
     const fetchData = async () => {
       try {
         setLoading(true);
         setErrorMsg("");
 
-        // 1. Fetch Patient Info
+        // 1. Fetch patient info + access control check
         try {
           const patDoc = await getDoc(getUserDocRef("patient", patientId));
           if (patDoc.exists()) {
             const patData = patDoc.data();
 
-            // STRICT ACCESS CONTROL
+            // Block access if doctor is not assigned to this patient
             if (patData.doctorId !== doctorProfile.uid) {
               setErrorMsg("Access Denied: You are not the assigned doctor for this patient.");
               setLoading(false);
-              return; // Completely stop fetching any other private data
+              return;
             }
 
             setPatient(patData);
@@ -101,7 +111,7 @@ const PatientHistory = () => {
           console.error("Error fetching patient", e);
         }
 
-        // 2. Fetch Journal
+        // 2. Fetch journal entries (with fallback if index missing)
         try {
           const jrnSnap = await getDocs(query(collection(firestore, "users", "patients", "accounts", patientId, "journal"), orderBy("createdAt", "desc")));
           setJournalEntries(jrnSnap.docs.map((d) => ({ id: d.id, ...d.data() })));
@@ -121,7 +131,7 @@ const PatientHistory = () => {
           }
         }
 
-        // 3. Fetch Medical Records
+        // 3. Fetch medical records (with fallback)
         try {
           const recSnap = await getDocs(query(collection(firestore, "users", "patients", "accounts", patientId, "officialRecords"), orderBy("createdAt", "desc")));
           setMedicalRecords(recSnap.docs.map((d) => ({ id: d.id, ...d.data() })));
@@ -140,7 +150,7 @@ const PatientHistory = () => {
           }
         }
 
-        // 4. Fetch SCORAD Track Progress
+        // 4. Fetch SCORAD / track progress data for chart
         try {
           const trackSnap = await getDocs(collection(firestore, "users", "patients", "accounts", patientId, "trackProgress"));
           let tracks = trackSnap.docs.map(d => d.data());
@@ -149,6 +159,7 @@ const PatientHistory = () => {
             const tB = b.timestamp?.toMillis ? b.timestamp.toMillis() : new Date(b.timestamp || b.dateKey || 0).getTime();
             return tA - tB;
           });
+          // Convert to chart-friendly format
           const chartData = tracks.map(t => {
             const dateObj = t.timestamp?.toDate ? t.timestamp.toDate() : new Date(t.timestamp || t.dateKey || 0);
             return {
@@ -190,12 +201,12 @@ const PatientHistory = () => {
       }
     };
 
-    // Only run when we know who the doctor is
     if (patientId && doctorProfile) {
       fetchData();
     }
   }, [patientId, doctorProfile]);
 
+  // Assign an action item task to the patient
   const handleAssignAction = async (e) => {
     e.preventDefault();
     if (!newActionItem.trim()) return;
@@ -214,6 +225,7 @@ const PatientHistory = () => {
     }
   };
 
+  // Save a new medical record to the patient's file
   const handleCreateRecord = async (e) => {
     e.preventDefault();
     if (!patientSummary.trim()) return;
@@ -247,13 +259,14 @@ const PatientHistory = () => {
     }
   };
 
-  // --- Set Future Appointment ---
+  // Get tomorrow's date (minimum date for scheduling)
   const getMinDate = () => {
     const tomorrow = new Date();
     tomorrow.setDate(tomorrow.getDate() + 1);
     return tomorrow.toISOString().split("T")[0];
   };
 
+  // Check which time slots are already booked for a date
   const fetchApptBookedSlots = async (dateStr) => {
     if (!dateStr || !doctorProfile) { setApptBookedSlots([]); return; }
     setApptLoadingSlots(true);
@@ -284,6 +297,7 @@ const PatientHistory = () => {
     }
   };
 
+  // Re-check booked slots when date changes
   useEffect(() => {
     if (apptDate && doctorProfile) {
       fetchApptBookedSlots(apptDate);
@@ -294,6 +308,7 @@ const PatientHistory = () => {
     }
   }, [apptDate, doctorProfile]);
 
+  // Create a new appointment for this patient
   const handleSetAppointment = async (e) => {
     e.preventDefault();
     setApptError("");
@@ -310,13 +325,14 @@ const PatientHistory = () => {
         doctorName: doctorProfile.name || "Doctor",
         date: Timestamp.fromDate(new Date(apptDate)),
         timeSlot: apptTimeSlot,
-        status: "approved",
+        status: "approved", // Auto-approved since set by doctor
         reason: apptReason.trim(),
         setByDoctor: true,
         createdAt: serverTimestamp(),
       };
       const docRef = await addDoc(collection(firestore, "users", "patients", "accounts", patientId, "appointments"), apptData);
       
+      // Add to local list and sort
       setUpcomingAppointments(prev => {
         const updated = [...prev, { id: docRef.id, ...apptData }];
         return updated.sort((a,b) => {
@@ -339,10 +355,12 @@ const PatientHistory = () => {
     }
   };
 
+  // Print the page as PDF
   const exportToPDF = () => {
     window.print();
   };
 
+  // Format timestamp to readable date
   const formatTime = (timestamp) => {
     if (!timestamp) return "N/A";
     try {
@@ -355,7 +373,7 @@ const PatientHistory = () => {
     }
   };
 
-  // Safe renderer for arrays
+  // Safely join two arrays into a string
   const safeArrayJoin = (arr1, arr2) => {
     const a1 = Array.isArray(arr1) ? arr1 : [];
     const a2 = Array.isArray(arr2) ? arr2 : [];
@@ -365,7 +383,7 @@ const PatientHistory = () => {
   return (
     <DoctorLayout title="Patient File">
 
-      {/* CSS for printing */}
+      {/* Print styles */}
       <style dangerouslySetInnerHTML={{
         __html: `
         @media print {
@@ -378,13 +396,14 @@ const PatientHistory = () => {
 
       <div className="space-y-6 animate-fade-in-up pb-12">
 
+        {/* Error banner */}
         {errorMsg && (
           <div className="bg-red-50 border border-red-200 text-red-600 p-4 rounded-xl">
             {errorMsg}
           </div>
         )}
 
-        {/* Header */}
+        {/* Patient header */}
         <div className="flex justify-between items-center bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
           <div>
             <h3 className="text-2xl font-bold text-slate-800">
@@ -397,11 +416,9 @@ const PatientHistory = () => {
           </button>
         </div>
 
-        {/* ═══════════════════════════════════════════ */}
-        {/* TABBED INTERFACE */}
-        {/* ═══════════════════════════════════════════ */}
+        {/* Tabbed interface */}
         <div className="relative z-0 print:hidden mt-6 mb-6">
-          {/* Tab Toggle */}
+          {/* Tab buttons */}
           <div className="flex flex-wrap items-end mb-0 relative z-10 px-4 gap-1">
             <button
               onClick={() => setActiveRecordTab("chart")}
@@ -445,16 +462,19 @@ const PatientHistory = () => {
             </button>
           </div>
 
-          {/* Tab Content Container */}
+          {/* Tab content */}
           <div className="bg-white p-6 rounded-3xl rounded-tl-none shadow-sm border border-slate-100 relative group transition-all duration-500 min-h-[400px]">
             
+            {/* Tab 1: SCORAD trend chart */}
             {activeRecordTab === "chart" && <ScoradTrendChart data={scoradHistory} />}
             
+            {/* Tab 2: Past progress logs */}
             {activeRecordTab === "logs" && <PastProgressLogs progressData={fullProgressLogs} />}
 
+            {/* Tab 3: Medical records (create + view past) */}
             {activeRecordTab === "medical_record" && (
               <div className="flex flex-col gap-6 animate-fade-in">
-                {/* Create Official Medical Record */}
+                {/* Create new medical record form */}
                 <div className="bg-indigo-50 p-6 rounded-2xl border border-indigo-100">
                   <h3 className="text-lg font-bold text-indigo-800 flex items-center gap-2 mb-4">
                     <Stethoscope className="h-5 w-5" /> Create Official Medical Record
@@ -493,7 +513,7 @@ const PatientHistory = () => {
                   </form>
                 </div>
 
-                {/* Past Medical Records */}
+                {/* Past medical records list */}
                 <div className="glass-strong p-6 flex flex-col min-h-[400px]">
                   <div className="flex items-center justify-between mb-4">
                     <h3 className="text-lg font-semibold text-slate-800 flex items-center gap-2">
@@ -568,9 +588,10 @@ const PatientHistory = () => {
               </div>
             )}
 
+            {/* Tab 4: Journal entries + assign action items */}
             {activeRecordTab === "journal" && (
               <div className="flex flex-col gap-6 animate-fade-in">
-                {/* Assign Action Item */}
+                {/* Assign action item form */}
                 <div className="bg-sky-50 p-6 rounded-2xl border border-sky-100">
                   <h3 className="text-lg font-bold text-sky-800 flex items-center gap-2 mb-4">
                     <CheckSquare className="h-5 w-5" /> Assign Action Item
@@ -590,7 +611,7 @@ const PatientHistory = () => {
                   </form>
                 </div>
 
-                {/* Patient Journal */}
+                {/* Past journal entries list */}
                 <div className="glass-strong p-6 flex flex-col h-[600px]">
                   <div className="flex items-center justify-between mb-4">
                     <h3 className="text-lg font-semibold text-slate-800 flex items-center gap-2">
@@ -658,9 +679,10 @@ const PatientHistory = () => {
               </div>
             )}
 
+            {/* Tab 5: Set appointment + view upcoming */}
             {activeRecordTab === "appointment" && (
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 animate-fade-in">
-                {/* Left side: Set Future Appointment */}
+                {/* Left: appointment form */}
                 <div className="bg-emerald-50 p-6 rounded-2xl border border-emerald-100 flex flex-col h-[600px]">
                   <h3 className="text-lg font-bold text-emerald-800 flex items-center gap-2 mb-2">
                     <CalendarPlus className="h-5 w-5" /> Set Future Appointment
@@ -701,6 +723,7 @@ const PatientHistory = () => {
                         </div>
                       </div>
 
+                      {/* Time slot grid (booked slots are disabled) */}
                       {apptDate && (
                         <div>
                           <label className="text-xs font-bold text-emerald-800 uppercase mb-2 block">Time Slot</label>
@@ -746,7 +769,7 @@ const PatientHistory = () => {
                   </div>
                 </div>
 
-                {/* Right side: Scheduled Appointments */}
+                {/* Right: calendar + upcoming appointments */}
                 <div className="glass-strong p-6 flex flex-col h-[600px]">
                   <h3 className="text-lg font-semibold text-slate-800 flex items-center justify-between gap-2 mb-4">
                     <div className="flex items-center gap-2">
@@ -759,6 +782,7 @@ const PatientHistory = () => {
                     )}
                   </h3>
 
+                  {/* Calendar with green dots on dates with appointments */}
                   <div className="mb-4 bg-white rounded-xl border border-slate-200 p-2 shadow-sm text-sm overflow-hidden" style={{ minHeight: '300px' }}>
                     <ReactCalendar
                       onChange={setApptDateFilter}
@@ -766,7 +790,7 @@ const PatientHistory = () => {
                       className="border-0 w-full"
                       tileContent={({ date, view }) => {
                         if (view === 'month') {
-                          const dtStr = date.toLocaleDateString("en-CA"); // YYYY-MM-DD local
+                          const dtStr = date.toLocaleDateString("en-CA");
                           const hasAppt = upcomingAppointments.some(a => {
                             if (a.status === "cancelled" || a.status === "rejected") return false;
                             const aDt = a.date?.toDate ? a.date.toDate() : new Date(a.date);
@@ -781,6 +805,7 @@ const PatientHistory = () => {
                     />
                   </div>
 
+                  {/* Appointment cards */}
                   <div className="overflow-y-auto flex-1 space-y-4 pr-2">
                     {(() => {
                       const filtered = apptDateFilter 
@@ -818,7 +843,6 @@ const PatientHistory = () => {
                               <p className="text-sm text-slate-700 font-medium">{appt.reason}</p>
                             </div>
                             
-                            {/* Actions / Status */}
                             <div className="mt-3 flex justify-end">
                               {isCompleted ? (
                                 <span className="flex items-center gap-1.5 text-xs font-bold text-emerald-600 bg-emerald-100 px-3 py-1.5 rounded-lg border border-emerald-200">

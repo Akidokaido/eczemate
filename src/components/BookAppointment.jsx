@@ -1,3 +1,5 @@
+// BookAppointment - patient component to schedule a visit with an approved doctor
+// Prevents booking if an active appointment already exists and handles time slot checking
 import React, { useState, useEffect } from "react";
 import {
   auth,
@@ -26,6 +28,7 @@ import {
   AlertCircle,
 } from "lucide-react";
 
+// Available daily time slots for booking
 const TIME_SLOTS = [
   "8:00 AM", "9:00 AM", "10:00 AM", "11:00 AM",
   "2:00 PM", "3:00 PM", "4:00 PM", "5:00 PM",
